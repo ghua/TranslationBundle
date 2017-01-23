@@ -1,0 +1,48 @@
+AppBundle\Entity\DummyTranslations:
+    type: entity
+    table: dummy_translations
+    indexes:
+        language_id:
+            columns:
+                - language_id
+        dummy_id:
+            columns:
+                - dummy_id
+    id:
+        id:
+            type: integer
+            nullable: false
+            options:
+                unsigned: true
+            id: true
+            generator:
+                strategy: IDENTITY
+    fields:
+        name:
+            type: text
+            nullable: false
+            length: 255
+            options:
+                fixed: false
+    manyToOne:
+        language:
+            targetEntity: Language
+            cascade: {  }
+            fetch: LAZY
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                language_id:
+                    referencedColumnName: id
+            orphanRemoval: false
+        entity:
+            targetEntity: Dummy
+            cascade: { }
+            fetch: EAGER
+            mappedBy: null
+            inversedBy: translations
+            joinColumns:
+                dummy_id:
+                    referencedColumnName: id
+            orphanRemoval: false
+    lifecycleCallbacks: {  }

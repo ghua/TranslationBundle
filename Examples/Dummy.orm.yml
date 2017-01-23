@@ -1,0 +1,25 @@
+AppBundle\Entity\Dummy:
+    type: entity
+    table: dummies
+    id:
+        id:
+            type: integer
+            nullable: false
+            options:
+                unsigned: true
+            id: true
+            generator:
+                strategy: IDENTITY
+    fields:
+        slug:
+            type: string
+            nullable: false
+            length: 255
+            options:
+                fixed: false
+    oneToMany:
+        translations:
+            targetEntity: DummyTranslations
+            mappedBy: entity
+            fetch: EAGER
+    lifecycleCallbacks: {  }
