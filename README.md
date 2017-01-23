@@ -18,12 +18,16 @@ vkr_translation:
     language_entity: "MyBundle:MyLanguageEntity"
     locale_retriever_service: "my.locale_retriever"
 ```
+
 2) Create a locale retriever service. It must implement ```LocaleRetrieverInterface```
 and define its two methods. Both methods can return ISO language codes in either short
 (as in 'en') or long (as in 'en_US') forms.
+
 3) Define a language entity. It must implement ```LanguageEntityInterface```. The ```getCode()```
 method should return a language code in the same form as returned by your locale retriever.
+
 4) Define at least one pair of entities - see below.
+
 5) (Optional) If you want to use Google Translations integration, set ```vkr_translation.google_api_key``` parameter
 in ```parameters.yml```.
 
@@ -71,9 +75,11 @@ public function getName()
 
 YAML or XML mappings for both entities should contain these:
 
-1) PK fields called "id"
+1) PK fields called "id".
+
 2) One-to-many association to "translations" on translatable entity (eager loading
-highly recommended)
+highly recommended).
+
 3) Many-to-one associations on translation entity to "language" and "entity" that point
 to language entity and translatable entity, respectfully.
 
@@ -141,16 +147,22 @@ Currently only ascending ordering is supported.
 So how does it all work?
 
 1) The script looks for the translation into the specified locale.
+
 2) If not found, the script looks for the translation into a locale specified by
 ```getDefaultLocale()``` method of your locale retriever.
+
 3) If the translation into that default locale is found, and Google Translation
 is enabled, the script attempts to get translation into the specified locale from Google.
+
 4) If there is no translation neither to specified locale nor to default locale,
 the script attempts to retrieve just any other random translation from the DB.
+
 5) Then, if successful, and if Google Translations is enabled, the script will try
 to translate that translation into the specified locale via Google.
+
 6) Finally, if no translations exist in the DB, the script will look for ```getTranslationFallback()```
 method on the entity and return whatever value it returns, except for ```false```.
+
 7) If ```getTranslationFallback()``` does not exist or returns ```false```, the script
 gives up and throws ```TranslationException```.
 
