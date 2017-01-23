@@ -1,0 +1,42 @@
+services:
+    vkr_translation.translation_manager:
+        class: VKR\TranslationBundle\Services\TranslationManager
+        arguments:
+            - "@=service(parameter('vkr_translation.locale_retriever_service'))"
+            - "@vkr_translation.translation_retriever"
+            - "@vkr_translation.translated_field_setter"
+
+    vkr_translation.translation_retriever:
+        class: VKR\TranslationBundle\Services\TranslationRetriever
+        arguments:
+            - "@vkr_translation.drivers.doctrine"
+            - "@vkr_translation.drivers.google"
+
+    vkr_translation.translation_updater:
+        class: VKR\TranslationBundle\Services\TranslationUpdater
+        arguments:
+            - "@doctrine.orm.entity_manager"
+            - "@vkr_translation.class_checker"
+            - "%vkr_translation.language_entity%"
+
+    vkr_translation.translated_field_setter:
+        class: VKR\TranslationBundle\Services\TranslatedFieldSetter
+
+    vkr_translation.class_checker:
+        class: VKR\TranslationBundle\Services\TranslationClassChecker
+
+    vkr_translation.drivers.doctrine:
+        class: VKR\TranslationBundle\Services\DoctrineTranslationDriver
+        arguments:
+            - "@doctrine.orm.entity_manager"
+            - "%vkr_translation.language_entity%"
+
+    vkr_translation.drivers.google:
+        class: VKR\TranslationBundle\Services\GoogleTranslationDriver
+        arguments:
+            - "@vkr_translation.class_checker"
+            - "@vkr_translation.decorators.google_client"
+            - "@=container.hasParameter('vkr_translation.google_api_key') ? parameter('vkr_translation.google_api_key') : ''"
+
+    vkr_translation.decorators.google_client:
+        class: VKR\TranslationBundle\Decorators\GoogleClientDecorator

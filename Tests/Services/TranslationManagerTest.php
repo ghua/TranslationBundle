@@ -1,0 +1,284 @@
+<?php
+namespace VKR\TranslationBundle\Tests\Services;
+
+use VKR\TranslationBundle\Entity\LanguageEntityInterface;
+use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
+use VKR\TranslationBundle\Entity\TranslationEntityInterface;
+use VKR\TranslationBundle\Exception\TranslationException;
+use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
+use VKR\TranslationBundle\Services\TranslatedFieldSetter;
+use VKR\TranslationBundle\Services\TranslationManager;
+use VKR\TranslationBundle\Services\TranslationRetriever;
+use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
+use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
+use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
+use VKR\TranslationBundle\TestHelpers\Entity\DummyWithFallback;
+
+class TranslationManagerTest extends \PHPUnit_Framework_TestCase
+{
+    const LANGUAGE_ENTITY = 'MyBundle:Languages';
+
+    /**
+     * @var TranslationManager
+     */
+    private $translationManager;
+
+    /**
+     * @var LanguageEntityInterface
+     */
+    private $languageEn;
+
+    /**
+     * @var LanguageEntityInterface
+     */
+    private $languageRu;
+
+    /**
+     * @var LanguageEntityInterface
+     */
+    private $languageDe;
+
+    /**
+     * @var DummyTranslations[]
+     */
+    private $translationEn;
+
+    /**
+     * @var DummyTranslations[]
+     */
+    private $translationRu;
+
+    public function setUp()
+    {
+        $this->languageEn = new DummyLanguageEntity();
+        $this->languageEn->setCode('en');
+        $this->languageRu = new DummyLanguageEntity();
+        $this->languageRu->setCode('ru');
+        $this->languageDe = new DummyLanguageEntity();
+        $this->languageDe->setCode('de');
+
+        $this->translationEn[0] = new DummyTranslations();
+        $this->translationEn[0]
+            ->setLanguage($this->languageEn)
+            ->setField1('value1')
+            ->setField2('value2')
+        ;
+
+        $this->translationRu[0] = new DummyTranslations();
+        $this->translationRu[0]
+            ->setLanguage($this->languageRu)
+            ->setField1('znachenie1')
+            ->setField2('znachenie2')
+        ;
+
+        $this->translationEn[1] = new DummyTranslations();
+        $this->translationEn[1]
+            ->setLanguage($this->languageEn)
+            ->setField1('value3')
+            ->setField2('value4')
+        ;
+
+        $this->translationRu[1] = new DummyTranslations();
+        $this->translationRu[1]
+            ->setLanguage($this->languageRu)
+            ->setField1('znachenie3')
+            ->setField2('znachenie4')
+        ;
+
+        $localeRetriever = $this->mockLocaleRetriever();
+        $translationRetriever = $this->mockTranslationRetriever();
+        $translatedFieldSetter = $this->mockTranslatedFieldSetter();
+        $this->translationManager = new TranslationManager(
+            $localeRetriever, $translationRetriever, $translatedFieldSetter
+        );
+    }
+
+    public function testWithSingleResult()
+    {
+        $currentLocale = 'en';
+
+        $result = new Dummy();
+        $result->addTranslation($this->translationEn[0]);
+        $result->addTranslation($this->translationRu[0]);
+
+        /** @var Dummy $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale);
+        $this->assertEquals('value1', $translatedResult->getField1());
+        $this->assertEquals('value2', $translatedResult->getField2());
+    }
+
+    public function testWithDefaultLocale()
+    {
+        $result = new Dummy();
+        $result->addTranslation($this->translationEn[0]);
+        $result->addTranslation($this->translationRu[0]);
+
+        /** @var Dummy $translatedResult */
+        $translatedResult = $this->translationManager->translate($result);
+        $this->assertEquals('znachenie1', $translatedResult->getField1());
+        $this->assertEquals('znachenie2', $translatedResult->getField2());
+    }
+
+    public function testWithTranslationFallback()
+    {
+        $currentLocale = 'de';
+        $result = new DummyWithFallback();
+        $result->setSlug('value1');
+
+        /** @var DummyWithFallback $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale);
+        $this->assertEquals('value1', $translatedResult->getName());
+    }
+
+    public function testWithOrdering()
+    {
+        $currentLocale = 'ru';
+
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $this->translationRu[0]->setField2('foo');
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $this->translationRu[1]->setField2('boo');
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        /** @var Dummy[] $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale, 'field2');
+        $this->assertEquals('boo', $translatedResult[0]->getField2());
+        $this->assertEquals('foo', $translatedResult[1]->getField2());
+    }
+
+    public function testWithArrayResult()
+    {
+        $currentLocale = 'ru';
+
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        /** @var Dummy[] $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale);
+        $this->assertEquals('znachenie2', $translatedResult[0]->getField2());
+        $this->assertEquals('znachenie3', $translatedResult[1]->getField1());
+    }
+
+    public function testWithBadResult()
+    {
+        $currentLocale = 'en';
+        $result = 'foo';
+        $this->setExpectedException(TranslationException::class, 'Argument of translate() must be either TranslatableEntityInterface object or array of such objects');
+        /** @noinspection PhpParamsInspection */
+        $this->translationManager->translate($result, $currentLocale);
+    }
+
+    public function testWithBadArrayResult()
+    {
+        $currentLocale = 'en';
+        $result = ['foo'];
+        $this->setExpectedException(TranslationException::class, 'Argument of translate() must be either TranslatableEntityInterface object or array of such objects');
+        $this->translationManager->translate($result, $currentLocale);
+    }
+
+    public function testWithNoTranslations()
+    {
+        $currentLocale = 'en';
+        $result = new Dummy();
+        $this->setExpectedException(
+            TranslationException::class,
+            'Translations do not exist or cannot be loaded for ID 1 of entity ' . Dummy::class
+        );
+        $this->translationManager->translate($result, $currentLocale);
+    }
+
+    public function testWithOrderingByNonexistentColumn()
+    {
+
+    }
+
+    public function testWithoutFallbackLocale()
+    {
+
+    }
+
+    private function mockLocaleRetriever()
+    {
+        $localeRetriever = $this->getMockForAbstractClass(LocaleRetrieverInterface::class);
+        $localeRetriever->expects($this->any())
+            ->method('getDefaultLocale')
+            ->willReturnCallback([$this, 'getDefaultLocaleCallback']);
+        $localeRetriever->expects($this->any())
+            ->method('getCurrentLocale')
+            ->willReturnCallback([$this, 'getCurrentLocaleCallback']);
+        return $localeRetriever;
+    }
+
+    private function mockTranslationRetriever()
+    {
+        $translationRetriever = $this->getMockBuilder(TranslationRetriever::class)
+            ->disableOriginalConstructor()->getMock();
+        $translationRetriever->expects($this->any())
+            ->method('getActiveTranslation')
+            ->willReturnCallback([$this, 'getActiveTranslationCallback']);
+        return $translationRetriever;
+    }
+
+    private function mockTranslatedFieldSetter()
+    {
+        $translatedFieldSetter = $this->getMockBuilder(TranslatedFieldSetter::class)
+            ->disableOriginalConstructor()->getMock();
+        $translatedFieldSetter->expects($this->any())
+            ->method('setTranslatedFields')
+            ->willReturnCallback([$this, 'setTranslatedFieldsCallback']);
+        $translatedFieldSetter->expects($this->any())
+            ->method('setTranslatedFieldsWithFallback')
+            ->willReturnCallback([$this, 'setTranslatedFieldsWithFallbackCallback']);
+        return $translatedFieldSetter;
+    }
+
+    public function getCurrentLocaleCallback()
+    {
+        return 'ru';
+    }
+
+    public function getDefaultLocaleCallback()
+    {
+        return 'en';
+    }
+
+    public function getActiveTranslationCallback(
+        TranslatableEntityInterface $record,
+        $locale,
+        $fallbackLocale
+    ) {
+        foreach ($record->getTranslations() as $translation) {
+            if ($translation->getLanguage()->getCode() == $locale) {
+                return $translation;
+            }
+        }
+        return null;
+    }
+
+    public function setTranslatedFieldsCallback(
+        TranslatableEntityInterface $record,
+        TranslationEntityInterface $translation
+    ) {
+        if ($record instanceof Dummy && $translation instanceof DummyTranslations) {
+            $record->setField1($translation->getField1());
+            $record->setField2($translation->getField2());
+        }
+    }
+
+    public function setTranslatedFieldsWithFallbackCallback(
+        TranslatableEntityInterface $record
+    ) {
+        if ($record instanceof DummyWithFallback) {
+            $record->setName($record->getSlug());
+        }
+    }
+}
