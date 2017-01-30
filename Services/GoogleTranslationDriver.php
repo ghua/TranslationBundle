@@ -57,9 +57,12 @@ class GoogleTranslationDriver
             }
             $value = $translation->$getterName();
             try {
-                $value = $this->googleClient->translate($value, $options);
+                $valueJson = $this->googleClient->translate($value, $options);
             } catch (\Exception $e) {
                 throw new TranslationException('Error from Google Translate API');
+            }
+            if (isset($valueJson['text'])) {
+                $value = $valueJson['text'];
             }
             $setterName = 'set' . ucfirst($field);
             if (!method_exists($newTranslation, $setterName)) {

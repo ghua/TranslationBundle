@@ -150,7 +150,7 @@ class GoogleTranslationDriverTest extends \PHPUnit_Framework_TestCase
         $target = $options['target'];
         foreach ($this->translations as $translation) {
             if ($translation[$source] == $value) {
-                return $translation[$target];
+                return ['text' => $translation[$target]];
             }
         }
         return '';
