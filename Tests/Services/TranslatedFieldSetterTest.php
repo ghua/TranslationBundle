@@ -1,12 +1,13 @@
 <?php
 namespace VKR\TranslationBundle\Tests\Services;
 
+use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\TranslatedFieldSetter;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithFallbackTranslations;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithFallback;
 
-class TranslatedFieldSetterTest extends \PHPUnit_Framework_TestCase
+class TranslatedFieldSetterTest extends TestCase
 {
     /**
      * @var TranslatedFieldSetter
@@ -41,7 +42,8 @@ class TranslatedFieldSetterTest extends \PHPUnit_Framework_TestCase
     {
         $entity = new DummyWithFallback();
         $translation = new DummyWithFallbackTranslations();
-        $this->setExpectedException(TranslationException::class, 'getTranslatableFields() must return a non-empty array');
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('getTranslatableFields() must return a non-empty array');
         $this->translatedFieldSetter->setTranslatedFields($entity, $translation);
     }
 
@@ -50,7 +52,8 @@ class TranslatedFieldSetterTest extends \PHPUnit_Framework_TestCase
         $entity = new DummyWithFallback();
         $entity->translatableFields = ['foo'];
         $translation = new DummyWithFallbackTranslations();
-        $this->setExpectedException(TranslationException::class, 'Method setFoo must exist in class ' . DummyWithFallback::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method setFoo must exist in class ' . DummyWithFallback::class);
         $this->translatedFieldSetter->setTranslatedFields($entity, $translation);
     }
 
@@ -59,7 +62,8 @@ class TranslatedFieldSetterTest extends \PHPUnit_Framework_TestCase
         $entity = new DummyWithFallback();
         $entity->translatableFields = ['bar'];
         $translation = new DummyWithFallbackTranslations();
-        $this->setExpectedException(TranslationException::class, 'Method getBar must exist in class ' . DummyWithFallbackTranslations::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method getBar must exist in class ' . DummyWithFallbackTranslations::class);
         $this->translatedFieldSetter->setTranslatedFields($entity, $translation);
     }
 
@@ -68,7 +72,8 @@ class TranslatedFieldSetterTest extends \PHPUnit_Framework_TestCase
         $entity = new DummyWithFallback();
         $entity->setSlug('my_slug');
         $entity->translatableFields = ['foo'];
-        $this->setExpectedException(TranslationException::class, 'Method setFoo must exist in class ' . DummyWithFallback::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method setFoo must exist in class ' . DummyWithFallback::class);
         $this->translatedFieldSetter->setTranslatedFieldsWithFallback($entity);
     }
 }

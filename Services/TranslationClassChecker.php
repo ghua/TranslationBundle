@@ -26,7 +26,7 @@ class TranslationClassChecker
             throw new TranslationException("Class $translationClass requires constructor arguments");
         }
         if (!$reflection->isSubclassOf(TranslationEntityInterface::class)) {
-            throw new TranslationException("Class $translationClass does not implement TranslationEntityInterface");
+            throw new TranslationException("Class $translationClass does not implement " . TranslationEntityInterface::class);
         }
         return $translationClass;
     }

@@ -1,6 +1,7 @@
 <?php
 namespace VKR\TranslationBundle\Tests\Services;
 
+use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Entity\LanguageEntityInterface;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
@@ -14,9 +15,11 @@ use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithFallback;
 
-class TranslationManagerTest extends \PHPUnit_Framework_TestCase
+class TranslationManagerTest extends TestCase
 {
     const LANGUAGE_ENTITY = 'MyBundle:Languages';
+
+    private $defaultLocale;
 
     /**
      * @var TranslationManager
@@ -50,6 +53,7 @@ class TranslationManagerTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+        $this->defaultLocale = 'en';
         $this->languageEn = new DummyLanguageEntity();
         $this->languageEn->setCode('en');
         $this->languageRu = new DummyLanguageEntity();
@@ -172,7 +176,8 @@ class TranslationManagerTest extends \PHPUnit_Framework_TestCase
     {
         $currentLocale = 'en';
         $result = 'foo';
-        $this->setExpectedException(TranslationException::class, 'Argument of translate() must be either TranslatableEntityInterface object or array of such objects');
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Argument of translate() must be either ' . TranslatableEntityInterface::class . ' object or array of such objects');
         /** @noinspection PhpParamsInspection */
         $this->translationManager->translate($result, $currentLocale);
     }
@@ -181,7 +186,8 @@ class TranslationManagerTest extends \PHPUnit_Framework_TestCase
     {
         $currentLocale = 'en';
         $result = ['foo'];
-        $this->setExpectedException(TranslationException::class, 'Argument of translate() must be either TranslatableEntityInterface object or array of such objects');
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Argument of translate() must be either ' . TranslatableEntityInterface::class . ' object or array of such objects');
         $this->translationManager->translate($result, $currentLocale);
     }
 
@@ -189,54 +195,67 @@ class TranslationManagerTest extends \PHPUnit_Framework_TestCase
     {
         $currentLocale = 'en';
         $result = new Dummy();
-        $this->setExpectedException(
-            TranslationException::class,
-            'Translations do not exist or cannot be loaded for ID 1 of entity ' . Dummy::class
-        );
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Translations do not exist or cannot be loaded for ID 1 of entity ' . Dummy::class);
         $this->translationManager->translate($result, $currentLocale);
     }
 
     public function testWithOrderingByNonexistentColumn()
     {
+        $currentLocale = 'ru';
 
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $this->translationRu[0]->setField2('foo');
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $this->translationRu[1]->setField2('boo');
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Objects of type ' . Dummy::class . ' must have getField999 method');
+        $this->translationManager->translate($result, $currentLocale, 'field999');
     }
 
     public function testWithoutFallbackLocale()
     {
+        $this->defaultLocale = null;
+        $currentLocale = 'en';
 
+        $result = new Dummy();
+        $result->addTranslation($this->translationEn[0]);
+        $result->addTranslation($this->translationRu[0]);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Default locale must be set before translating');
+        $this->translationManager->translate($result, $currentLocale);
     }
 
     private function mockLocaleRetriever()
     {
-        $localeRetriever = $this->getMockForAbstractClass(LocaleRetrieverInterface::class);
-        $localeRetriever->expects($this->any())
-            ->method('getDefaultLocale')
+        $localeRetriever = $this->createMock(LocaleRetrieverInterface::class);
+        $localeRetriever->method('getDefaultLocale')
             ->willReturnCallback([$this, 'getDefaultLocaleCallback']);
-        $localeRetriever->expects($this->any())
-            ->method('getCurrentLocale')
+        $localeRetriever->method('getCurrentLocale')
             ->willReturnCallback([$this, 'getCurrentLocaleCallback']);
         return $localeRetriever;
     }
 
     private function mockTranslationRetriever()
     {
-        $translationRetriever = $this->getMockBuilder(TranslationRetriever::class)
-            ->disableOriginalConstructor()->getMock();
-        $translationRetriever->expects($this->any())
-            ->method('getActiveTranslation')
+        $translationRetriever = $this->createMock(TranslationRetriever::class);
+        $translationRetriever->method('getActiveTranslation')
             ->willReturnCallback([$this, 'getActiveTranslationCallback']);
         return $translationRetriever;
     }
 
     private function mockTranslatedFieldSetter()
     {
-        $translatedFieldSetter = $this->getMockBuilder(TranslatedFieldSetter::class)
-            ->disableOriginalConstructor()->getMock();
-        $translatedFieldSetter->expects($this->any())
-            ->method('setTranslatedFields')
+        $translatedFieldSetter = $this->createMock(TranslatedFieldSetter::class);
+        $translatedFieldSetter->method('setTranslatedFields')
             ->willReturnCallback([$this, 'setTranslatedFieldsCallback']);
-        $translatedFieldSetter->expects($this->any())
-            ->method('setTranslatedFieldsWithFallback')
+        $translatedFieldSetter->method('setTranslatedFieldsWithFallback')
             ->willReturnCallback([$this, 'setTranslatedFieldsWithFallbackCallback']);
         return $translatedFieldSetter;
     }
@@ -248,7 +267,7 @@ class TranslationManagerTest extends \PHPUnit_Framework_TestCase
 
     public function getDefaultLocaleCallback()
     {
-        return 'en';
+        return $this->defaultLocale;
     }
 
     public function getActiveTranslationCallback(

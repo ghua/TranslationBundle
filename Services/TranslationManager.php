@@ -41,7 +41,7 @@ class TranslationManager
      */
     public function translate($result, $locale = '', $orderBy = '')
     {
-        $exception = 'Argument of translate() must be either TranslatableEntityInterface object or array of such objects';
+        $exception = 'Argument of translate() must be either ' . TranslatableEntityInterface::class . ' object or array of such objects';
         if (!$locale) {
             $locale = $this->localeRetriever->getCurrentLocale();
         }
@@ -63,7 +63,7 @@ class TranslationManager
             $methodName = 'get' . ucfirst($orderBy);
             usort($translatedResult, function ($a, $b) use ($methodName) {
                 if (!method_exists($a, $methodName) || !method_exists($b, $methodName)) {
-                    throw new TranslationException('Objects of type ' . get_class($a) . 'must have ' . $methodName . ' method');
+                    throw new TranslationException('Objects of type ' . get_class($a) . ' must have ' . $methodName . ' method');
                 }
                 return strcasecmp($a->$methodName(), $b->$methodName());
             });

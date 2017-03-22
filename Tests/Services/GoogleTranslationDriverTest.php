@@ -2,6 +2,7 @@
 namespace VKR\TranslationBundle\Tests\Services;
 
 use Google\Cloud\Translate\TranslateClient;
+use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Decorators\GoogleClientDecorator;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\GoogleTranslationDriver;
@@ -14,7 +15,7 @@ use VKR\TranslationBundle\TestHelpers\Entity\DummyWithoutFieldsTranslations;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithWrongFields;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithWrongFieldsTranslations;
 
-class GoogleTranslationDriverTest extends \PHPUnit_Framework_TestCase
+class GoogleTranslationDriverTest extends TestCase
 {
     const GOOGLE_API_KEY = '';
 
@@ -84,7 +85,8 @@ class GoogleTranslationDriverTest extends \PHPUnit_Framework_TestCase
         $record = new DummyWithWrongFields();
         $value = new DummyWithWrongFieldsTranslations();
         $value->setLanguage($english);
-        $this->setExpectedException(TranslationException::class, 'Method getField1 not found in class ' . DummyWithWrongFieldsTranslations::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method getField1 not found in class ' . DummyWithWrongFieldsTranslations::class);
         $this->googleTranslationDriver->getTranslation($record, $target, $value);
     }
 
@@ -101,37 +103,30 @@ class GoogleTranslationDriverTest extends \PHPUnit_Framework_TestCase
             ->setField1('Dog')
             ->setField2('Cat')
         ;
-        $this->setExpectedException(TranslationException::class, 'Error from Google Translate API');
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Error from Google Translate API');
         $this->googleTranslationDriver->getTranslation($record, $target, $value);
     }
 
     private function mockTranslationClassChecker()
     {
-        $translationClassChecker = $this->getMockBuilder(TranslationClassChecker::class)
-            ->disableOriginalConstructor()->getMock();
-        $translationClassChecker->expects($this->any())
-            ->method('checkTranslationClass')
+        $translationClassChecker = $this->createMock(TranslationClassChecker::class);
+        $translationClassChecker->method('checkTranslationClass')
             ->willReturnCallback([$this, 'checkTranslationClassCallback']);
         return $translationClassChecker;
     }
 
     private function mockGoogleClientDecorator()
     {
-        $googleClientDecorator = $this->getMockBuilder(GoogleClientDecorator::class)
-            ->disableOriginalConstructor()->getMock();
-        $googleClientDecorator->expects($this->any())
-            ->method('createClient')
-            ->willReturn($this->mockGoogleClient());
+        $googleClientDecorator = $this->createMock(GoogleClientDecorator::class);
+        $googleClientDecorator->method('createClient')->willReturn($this->mockGoogleClient());
         return $googleClientDecorator;
     }
 
     private function mockGoogleClient()
     {
-        $googleClient = $this->getMockBuilder(TranslateClient::class)
-            ->disableOriginalConstructor()->getMock();
-        $googleClient->expects($this->any())
-            ->method('translate')
-            ->willReturnCallback([$this, 'translateCallback']);
+        $googleClient = $this->createMock(TranslateClient::class);
+        $googleClient->method('translate')->willReturnCallback([$this, 'translateCallback']);
         return $googleClient;
     }
 

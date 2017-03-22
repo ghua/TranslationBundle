@@ -3,6 +3,7 @@ namespace VKR\TranslationBundle\Tests\Services;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
+use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Entity\LanguageEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\TranslationClassChecker;
@@ -11,7 +12,7 @@ use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 
-class TranslationUpdaterTest extends \PHPUnit_Framework_TestCase
+class TranslationUpdaterTest extends TestCase
 {
     const LANGUAGE_ENTITY_NAME = 'MyBundle:Languages';
 
@@ -148,56 +149,47 @@ class TranslationUpdaterTest extends \PHPUnit_Framework_TestCase
     public function testUpdateWithoutLocale()
     {
         $entity = new Dummy();
-        $this->setExpectedException(TranslationException::class, 'Locale foo not found in the DB');
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Locale foo not found in the DB');
         $this->translationUpdater->updateTranslations($entity, 'foo', []);
     }
 
     public function testUpdateWithoutSetter()
     {
         $entity = new Dummy();
-        $this->setExpectedException(TranslationException::class, 'Method setFoo not found in class ' . DummyTranslations::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method setFoo not found in class ' . DummyTranslations::class);
         $this->translationUpdater->updateTranslations($entity, 'en', ['foo' => 'bar']);
     }
 
     public function testUpdateWithoutGetter()
     {
         $entity = new Dummy();
-        $this->setExpectedException(TranslationException::class, 'Method getField3 not found in class ' . DummyTranslations::class);
+        $this->expectException(TranslationException::class);
+        $this->expectExceptionMessage('Method getField3 not found in class ' . DummyTranslations::class);
         $this->translationUpdater->updateTranslations($entity, 'en', ['field3' => 'bar']);
     }
 
     private function mockEntityManager()
     {
-        $entityManager = $this->getMockBuilder(EntityManager::class)
-            ->disableOriginalConstructor()->getMock();
-        $entityManager->expects($this->any())
-            ->method('getRepository')
-            ->willReturn($this->mockEntityRepository());
-        $entityManager->expects($this->any())
-            ->method('persist')
-            ->willReturnCallback([$this, 'persistCallback']);
-        $entityManager->expects($this->any())
-            ->method('flush')
-            ->willReturnCallback([$this, 'flushCallback']);
+        $entityManager = $this->createMock(EntityManager::class);
+        $entityManager->method('getRepository')->willReturn($this->mockEntityRepository());
+        $entityManager->method('persist')->willReturnCallback([$this, 'persistCallback']);
+        $entityManager->method('flush')->willReturnCallback([$this, 'flushCallback']);
         return $entityManager;
     }
 
     private function mockEntityRepository()
     {
-        $entityRepository = $this->getMockBuilder(EntityRepository::class)
-            ->disableOriginalConstructor()->getMock();
-        $entityRepository->expects($this->any())
-            ->method('findOneBy')
-            ->willReturnCallback([$this, 'findOneByCallback']);
+        $entityRepository = $this->createMock(EntityRepository::class);
+        $entityRepository->method('findOneBy')->willReturnCallback([$this, 'findOneByCallback']);
         return $entityRepository;
     }
 
     private function mockTranslationClassChecker()
     {
-        $translationClassChecker = $this->getMockBuilder(TranslationClassChecker::class)
-            ->disableOriginalConstructor()->getMock();
-        $translationClassChecker->expects($this->any())
-            ->method('checkTranslationClass')
+        $translationClassChecker = $this->createMock(TranslationClassChecker::class);
+        $translationClassChecker->method('checkTranslationClass')
             ->willReturn(DummyTranslations::class);
         return $translationClassChecker;
     }

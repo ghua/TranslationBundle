@@ -1,6 +1,7 @@
 <?php
 namespace VKR\TranslationBundle\Tests\Services;
 
+use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Services\DoctrineTranslationDriver;
@@ -11,7 +12,7 @@ use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 use VKR\TranslationBundle\TestHelpers\Entity\GoogleTranslatableDummy;
 use VKR\TranslationBundle\TestHelpers\Entity\GoogleTranslatableDummyTranslations;
 
-class TranslationRetrieverTest extends \PHPUnit_Framework_TestCase
+class TranslationRetrieverTest extends TestCase
 {
     const FALLBACK_LOCALE = 'en';
 
@@ -138,23 +139,18 @@ class TranslationRetrieverTest extends \PHPUnit_Framework_TestCase
 
     private function mockDoctrineTranslationDriver()
     {
-        $doctrineTranslationDriver = $this->getMockBuilder(DoctrineTranslationDriver::class)
-            ->disableOriginalConstructor()->getMock();
-        $doctrineTranslationDriver->expects($this->any())
-            ->method('getTranslation')
+        $doctrineTranslationDriver = $this->createMock(DoctrineTranslationDriver::class);
+        $doctrineTranslationDriver->method('getTranslation')
             ->willReturnCallback([$this, 'getDoctrineTranslationCallback']);
-        $doctrineTranslationDriver->expects($this->any())
-            ->method('getFirstTranslation')
+        $doctrineTranslationDriver->method('getFirstTranslation')
             ->willReturnCallback([$this, 'getFirstTranslationCallback']);
         return $doctrineTranslationDriver;
     }
 
     private function mockGoogleTranslationDriver()
     {
-        $googleTranslationDriver = $this->getMockBuilder(GoogleTranslationDriver::class)
-            ->disableOriginalConstructor()->getMock();
-        $googleTranslationDriver->expects($this->any())
-            ->method('getTranslation')
+        $googleTranslationDriver = $this->createMock(GoogleTranslationDriver::class);
+        $googleTranslationDriver->method('getTranslation')
             ->willReturnCallback([$this, 'getGoogleTranslationCallback']);
         return $googleTranslationDriver;
     }
