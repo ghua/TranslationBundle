@@ -1,16 +1,27 @@
 services:
+    vkr_translation.algorithms.default:
+        class: VKR\TranslationBundle\Services\Algorithms\DefaultAlgorithm
+        arguments:
+            - "@vkr_translation.drivers.doctrine"
+            - "@vkr_translation.drivers.google"
+
+    vkr_translation.algorithms.no_translation:
+        class: VKR\TranslationBundle\Services\Algorithms\NoTranslationAlgorithm
+        arguments:
+            - "@vkr_translation.drivers.doctrine"
+
+    vkr_translation.algorithms.on_demand:
+        class: VKR\TranslationBundle\Services\Algorithms\OnDemandAlgorithm
+        arguments:
+            - "@vkr_translation.drivers.doctrine"
+            - "@vkr_translation.drivers.google"
+
     vkr_translation.translation_manager:
         class: VKR\TranslationBundle\Services\TranslationManager
         arguments:
             - "@=service(parameter('vkr_translation.locale_retriever_service'))"
-            - "@vkr_translation.translation_retriever"
             - "@vkr_translation.translated_field_setter"
-
-    vkr_translation.translation_retriever:
-        class: VKR\TranslationBundle\Services\TranslationRetriever
-        arguments:
-            - "@vkr_translation.drivers.doctrine"
-            - "@vkr_translation.drivers.google"
+            - "@vkr_translation.algorithms.default"
 
     vkr_translation.translation_updater:
         class: VKR\TranslationBundle\Services\TranslationUpdater

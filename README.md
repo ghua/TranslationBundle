@@ -1,11 +1,14 @@
 Overview
 ========
 
-This bundle handles translations for Doctrine entities. Though there are several other Symfony bundles 
-that do the same, this one was written for a specific situation - for every table there
-exists a separate translation table, and YAML or XML mappings are used. If you use annotations,
-you will find that Translatable from [KNP Doctrine Behaviors](https://github.com/KnpLabs/DoctrineBehaviors)
-suits your needs.
+This bundle handles translations. Though there are several other Symfony bundles 
+that do the same, this one is algorithm-agnostic and ORM-agnostic. Translations are stored
+in entities that might be the same as Doctrine entities, but technically any other ORM 
+can be used as well as non-DB persistence solutions. Users can use default translation
+algorithms shipped with the bundle or create some on their own. An algorithm can use
+one or more drivers. Two drivers are shipped with this bundle - one uses Doctrine and
+and is written for situation where a translations table exists per every translatable
+entity, the other uses Google Translate.
 
 Installation
 ============
@@ -34,10 +37,9 @@ in ```parameters.yml```.
 Defining entity pairs
 =====================
 
-This bundle is built around the idea of having a separate translation table for every table that
-needs to be translated. Therefore, two entities are needed - a **translatable entity** for
-the table that is to be translated and a **translation entity** for the table that contains
-translations. 
+This bundle is built around the idea of having a separate translation entity for every entity that
+needs to be translated. Therefore, two entities are needed - a **translatable entity** that is to be translated and a 
+**translation entity** that contains translations. 
 
 The translatable entity must implement ```TranslatableEntityInterface```, while its translation entity
 must implement ```TranslationEntityInterface```. Also, there is a naming convention:
@@ -53,6 +55,7 @@ is returned, a getter and a setter need to be defined manually on the translatab
 should be identical to those on the translated entity. In other words, if you have
 a 'name' field on the translation entity, you need to write something like this on
 the translatable entity:
+
 ```
 public function getTranslatableFields()
 {
@@ -73,7 +76,7 @@ public function getName()
 }
 ```
 
-YAML or XML mappings for both entities should contain these:
+If you are using Doctrine, YAML or XML mappings for both entities should contain these:
 
 1) PK fields called "id".
 
@@ -94,9 +97,9 @@ A translatable entity may define two more methods.
 ```getTranslationFallback``` allows to define a scalar value or another field on the
 translatable entity as a fallback in case no translations are found. It accepts one optional
 argument, ```$field```, which can be used in case there is more than one translatable field.
-If ```false``` is returned, the bundle will revert to default behavior, that is, throw a
+Under default algorithm, if ```false``` is returned, the bundle will revert to default behavior, that is, throw a
 ```TranslationException```. If you do not want the exception to be thrown, but just return an empty
-string if translations are not found, just return empty string.
+string if translations are not found, just make ```getTranslationFallback``` return empty string.
 
 This example will return slug instead of name and 'foo' instead of description:
 
@@ -114,7 +117,7 @@ public function getTranslationFallback($field = '')
 ```
 
 ```isGoogleTranslatable``` method should return true if you want to enable Google
-Translations for the entity. If not present, Google Translations will be disabled.
+Translations for the entity. If not present, Google Translations will be disabled under default algorithm.
 
 TranslationManager::translate() method
 ======================================
@@ -144,21 +147,49 @@ The third argument is the ordering column that should be the name of one of enti
 If the first argument is an array, its elements will be reordered based on that field.
 Currently only ascending ordering is supported.
 
-So how does it all work?
+Because exceptions can be thrown, it is recommended to catch ```TranslationException```
+on every call to ```translate()```.
 
-1) The script looks for the translation into the specified locale.
+Algorithms and drivers
+======================
+
+This bundle can work with multiple translation algorithms. By default, ```DefaultAlgorithm``` is used.
+You can swap algorithms by using this syntax:
+
+```
+$algorithm = $this->get('my.algorithm');
+$translationManager->setAlgorithm($algorithm);
+```
+
+You can create your own algorithm by implementing ```VKR\TranslationBundle\Interfaces\TranslationAlgorithmInterface```.
+It must contain ```getTranslation()``` method which must return a translation entity.
+While technically all external DB and API calls can be contained in the algorithm 
+itself, it is recommended to decouple them into driver classes. A driver is a plain
+PHP class that handles external calls. Two drivers are shipped with the bundle:
+```VKR\TranslationBundle\Services\DoctrineTranslationDriver``` and
+```VKR\TranslationBundle\Services\GoogleTranslationDriver```.
+If you wish to extend the bundle, note that it is highly recommended that no classes
+except for algorithms depend on drivers.
+
+Three algorithms are shipped with the bundle.
+
+### DefaultAlgorithm
+
+1) The script into the DB looks for the translation into the specified locale.
 
 2) If not found, the script looks for the translation into a locale specified by
 ```getDefaultLocale()``` method of your locale retriever.
 
 3) If the translation into that default locale is found, and Google Translation
 is enabled, the script attempts to get translation into the specified locale from Google.
+If Google driver throws exception, translation from step 2 is returned. 
 
 4) If there is no translation neither to specified locale nor to default locale,
 the script attempts to retrieve just any other random translation from the DB.
 
 5) Then, if successful, and if Google Translations is enabled, the script will try
-to translate that translation into the specified locale via Google.
+to translate that translation into the specified locale via Google. If Google driver
+throws exception, translation from step 4 is returned. 
 
 6) Finally, if no translations exist in the DB, the script will look for ```getTranslationFallback()```
 method on the entity and return whatever value it returns, except for ```false```.
@@ -166,8 +197,27 @@ method on the entity and return whatever value it returns, except for ```false``
 7) If ```getTranslationFallback()``` does not exist or returns ```false```, the script
 gives up and throws ```TranslationException```.
 
-Because exceptions can be thrown, it is recommended to catch ```TranslationException```
-on every call to ```translate()```.
+### NoTranslationAlgorithm
+
+This algorithm does not really translate anything, it just searches for any translation
+in the DB (returning the one with least PK value if there are many) and throws ```TranslationException```
+if there are none. Second and third arguments to ```TranslationManager::translate()``` are not used. 
+
+### OnDemandAlgorithm
+
+This algorithm behaves pretty close to ```DefaultAlgorithm```, but is less persistent 
+in trying to find a translation. It does not use third argument to ```TranslationManager::translate()```.
+
+1) The script looks into the DB for the translation into the specified locale.
+
+2) If there is no translation to specified locale,the script attempts to retrieve just 
+any other random translation from the DB.
+
+3) Then, if successful, and if Google Translations is enabled, the script will try
+to translate that translation into the specified locale via Google. If Google driver
+throws exception, translation from step 2 is returned. 
+
+4) If step 2 is unsuccessful, the script gives up and throws ```TranslationException```.
 
 TranslationUpdater::updateTranslations() method
 ===============================================
