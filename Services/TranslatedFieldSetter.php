@@ -18,9 +18,6 @@ class TranslatedFieldSetter
         TranslationEntityInterface $translation = null
     ) {
         if (!$translation) {
-            if ($translated->getTranslationFallback() !== false) {
-                return $this->setTranslatedFieldsWithFallback($translated);
-            }
             return $translated;
         }
         $translatableFields = $this->checkTranslatableFields($translated);
@@ -44,31 +41,10 @@ class TranslatedFieldSetter
 
     /**
      * @param TranslatableEntityInterface $translated
-     * @return TranslatableEntityInterface
-     * @throws TranslationException
-     */
-    private function setTranslatedFieldsWithFallback(TranslatableEntityInterface $translated)
-    {
-        $translatableFields = $this->checkTranslatableFields($translated);
-        foreach ($translatableFields as $field) {
-            $fallback = $translated->getTranslationFallback($field);
-            $setter = 'set' . ucfirst($field);
-            if (!method_exists($translated, $setter)) {
-                throw new TranslationException(
-                    'Method ' . $setter . ' must exist in class ' . get_class($translated)
-                );
-            }
-            $translated->$setter($fallback);
-        }
-        return $translated;
-    }
-
-    /**
-     * @param TranslatableEntityInterface $translated
      * @return array
      * @throws TranslationException
      */
-    private function checkTranslatableFields(TranslatableEntityInterface $translated)
+    public function checkTranslatableFields(TranslatableEntityInterface $translated)
     {
         $translatableFields = $translated->getTranslatableFields();
         if (!is_array($translatableFields) || !sizeof($translatableFields)) {

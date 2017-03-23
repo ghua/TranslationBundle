@@ -29,15 +29,6 @@ class TranslatedFieldSetterTest extends TestCase
         $this->assertEquals('translated name', $entity->getName());
     }
 
-    public function testSetTranslatedFieldsWithFallback()
-    {
-        $entity = new DummyWithFallback();
-        $entity->setSlug('my_slug');
-        $entity->translatableFields = ['name'];
-        $this->translatedFieldSetter->setTranslatedFields($entity);
-        $this->assertEquals('my_slug', $entity->getName());
-    }
-
     public function testWithoutTranslatableFields()
     {
         $entity = new DummyWithFallback();
@@ -65,15 +56,5 @@ class TranslatedFieldSetterTest extends TestCase
         $this->expectException(TranslationException::class);
         $this->expectExceptionMessage('Method getBar must exist in class ' . DummyWithFallbackTranslations::class);
         $this->translatedFieldSetter->setTranslatedFields($entity, $translation);
-    }
-
-    public function testWithFallbackButWithoutSetter()
-    {
-        $entity = new DummyWithFallback();
-        $entity->setSlug('my_slug');
-        $entity->translatableFields = ['foo'];
-        $this->expectException(TranslationException::class);
-        $this->expectExceptionMessage('Method setFoo must exist in class ' . DummyWithFallback::class);
-        $this->translatedFieldSetter->setTranslatedFields($entity);
     }
 }

@@ -6,9 +6,10 @@ that do the same, this one is algorithm-agnostic and ORM-agnostic. Translations 
 in entities that might be the same as Doctrine entities, but technically any other ORM 
 can be used as well as non-DB persistence solutions. Users can use default translation
 algorithms shipped with the bundle or create some on their own. An algorithm can use
-one or more drivers. Two drivers are shipped with this bundle - one uses Doctrine and
+one or more drivers. Three drivers are shipped with this bundle - one uses Doctrine and
 and is written for situation where a translations table exists per every translatable
-entity, the other uses Google Translate.
+entity, the second uses Google Translate, while the third allows to use another field of
+translated entity as a fallback.
 
 Installation
 ============
@@ -94,7 +95,7 @@ Optional methods on translatable entity
 
 A translatable entity may define two more methods.
  
-```getTranslationFallback``` allows to define a scalar value or another field on the
+```getTranslationFallback```. Under default algorithm, it allows to define a scalar value or another field on the
 translatable entity as a fallback in case no translations are found. It accepts one optional
 argument, ```$field```, which can be used in case there is more than one translatable field.
 Under default algorithm, if ```false``` is returned, the bundle will revert to default behavior, that is, throw a
@@ -116,8 +117,14 @@ public function getTranslationFallback($field = '')
 }
 ```
 
+If you want to use this method in your custom algorithm, you must include a dependency
+on ```EntityTranslationDriver```.
+
 ```isGoogleTranslatable``` method should return true if you want to enable Google
 Translations for the entity. If not present, Google Translations will be disabled under default algorithm.
+
+If you want to use this method in your custom algorithm, you must include a dependency
+on ```GoogleTranslationDriver```.
 
 TranslationManager::translate() method
 ======================================
@@ -165,9 +172,12 @@ You can create your own algorithm by implementing ```VKR\TranslationBundle\Inter
 It must contain ```getTranslation()``` method which must return a translation entity.
 While technically all external DB and API calls can be contained in the algorithm 
 itself, it is recommended to decouple them into driver classes. A driver is a plain
-PHP class that handles external calls. Two drivers are shipped with the bundle:
-```VKR\TranslationBundle\Services\DoctrineTranslationDriver``` and
-```VKR\TranslationBundle\Services\GoogleTranslationDriver```.
+PHP class that handles external calls. Three drivers are shipped with the bundle:
+```VKR\TranslationBundle\Services\DoctrineTranslationDriver```,
+```VKR\TranslationBundle\Services\GoogleTranslationDriver``` and 
+```VKR\TranslationBundle\Services\EntityTranslationDriver```. The third one uses another
+field of a translated entity as a translation and was designed to be used as a fallback
+if no other translations are found.
 If you wish to extend the bundle, note that it is highly recommended that no classes
 except for algorithms depend on drivers.
 

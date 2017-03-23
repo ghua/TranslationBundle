@@ -7,6 +7,7 @@ use VKR\TranslationBundle\Exception\GoogleTranslationException;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Interfaces\TranslationAlgorithmInterface;
 use VKR\TranslationBundle\Services\DoctrineTranslationDriver;
+use VKR\TranslationBundle\Services\EntityTranslationDriver;
 use VKR\TranslationBundle\Services\GoogleTranslationDriver;
 
 class DefaultAlgorithm implements TranslationAlgorithmInterface
@@ -17,12 +18,17 @@ class DefaultAlgorithm implements TranslationAlgorithmInterface
     /** @var GoogleTranslationDriver */
     private $googleTranslationDriver;
 
+    /** @var EntityTranslationDriver */
+    private $entityTranslationDriver;
+
     public function __construct(
         DoctrineTranslationDriver $doctrineTranslationDriver,
-        GoogleTranslationDriver $googleTranslationDriver
+        GoogleTranslationDriver $googleTranslationDriver,
+        EntityTranslationDriver $entityTranslationDriver
     ) {
         $this->doctrineTranslationDriver = $doctrineTranslationDriver;
         $this->googleTranslationDriver = $googleTranslationDriver;
+        $this->entityTranslationDriver = $entityTranslationDriver;
     }
 
     /**
@@ -39,9 +45,12 @@ class DefaultAlgorithm implements TranslationAlgorithmInterface
         }
         $activeTranslation = $this->getActiveTranslation($record, $locale, $fallbackLocale);
         if (!$activeTranslation) {
-            throw new TranslationException(
-                'Translations do not exist or cannot be loaded for ID ' . $record->getId() . ' of entity ' . get_class($record)
-            );
+            $activeTranslation = $this->entityTranslationDriver->getTranslation($record);
+            if (!$activeTranslation) {
+                throw new TranslationException(
+                    'Translations do not exist or cannot be loaded for ID ' . $record->getId() . ' of entity ' . get_class($record)
+                );
+            }
         }
         return $activeTranslation;
     }

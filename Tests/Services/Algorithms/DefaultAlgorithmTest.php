@@ -8,6 +8,7 @@ use VKR\TranslationBundle\Exception\GoogleTranslationException;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\Algorithms\DefaultAlgorithm;
 use VKR\TranslationBundle\Services\DoctrineTranslationDriver;
+use VKR\TranslationBundle\Services\EntityTranslationDriver;
 use VKR\TranslationBundle\Services\GoogleTranslationDriver;
 use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
@@ -38,6 +39,11 @@ class DefaultAlgorithmTest extends TestCase
     /**
      * @var TranslationEntityInterface|null
      */
+    private $entityTranslation = null;
+
+    /**
+     * @var TranslationEntityInterface|null
+     */
     private $firstTranslation = null;
 
     /**
@@ -61,8 +67,9 @@ class DefaultAlgorithmTest extends TestCase
 
         $doctrineTranslationDriver = $this->mockDoctrineTranslationDriver();
         $googleTranslationDriver = $this->mockGoogleTranslationDriver();
+        $entityTranslationDriver = $this->mockEntityTranslationDriver();
         $this->defaultAlgorithm = new DefaultAlgorithm(
-            $doctrineTranslationDriver, $googleTranslationDriver
+            $doctrineTranslationDriver, $googleTranslationDriver, $entityTranslationDriver
         );
     }
 
@@ -164,6 +171,17 @@ class DefaultAlgorithmTest extends TestCase
         $this->assertEquals('bar', $translation->getField1());
     }
 
+    public function testWithEntityTranslation()
+    {
+        $this->entityTranslation = new DummyTranslations();
+        $this->entityTranslation->setField1('fallback');
+        /** @var DummyTranslations $translation */
+        $translation = $this->defaultAlgorithm->getTranslation(
+            $this->record, 'de', self::FALLBACK_LOCALE
+        );
+        $this->assertEquals('fallback', $translation->getField1());
+    }
+
     private function mockDoctrineTranslationDriver()
     {
         $doctrineTranslationDriver = $this->createMock(DoctrineTranslationDriver::class);
@@ -180,6 +198,14 @@ class DefaultAlgorithmTest extends TestCase
         $googleTranslationDriver->method('getTranslation')
             ->willReturnCallback([$this, 'getGoogleTranslationCallback']);
         return $googleTranslationDriver;
+    }
+
+    private function mockEntityTranslationDriver()
+    {
+        $entityTranslationDriver = $this->createMock(EntityTranslationDriver::class);
+        $entityTranslationDriver->method('getTranslation')
+            ->willReturnCallback([$this, 'getEntityTranslationCallback']);
+        return $entityTranslationDriver;
     }
 
     public function getDoctrineTranslationCallback($record, $locale)
@@ -204,5 +230,10 @@ class DefaultAlgorithmTest extends TestCase
             return $this->googleFallbackTranslation;
         }
         return $this->googleLocaleTranslation;
+    }
+
+    public function getEntityTranslationCallback()
+    {
+        return $this->entityTranslation;
     }
 }

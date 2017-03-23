@@ -4,6 +4,7 @@ services:
         arguments:
             - "@vkr_translation.drivers.doctrine"
             - "@vkr_translation.drivers.google"
+            - "@vkr_translation.drivers.entity"
 
     vkr_translation.algorithms.no_translation:
         class: VKR\TranslationBundle\Services\Algorithms\NoTranslationAlgorithm
@@ -41,6 +42,11 @@ services:
         arguments:
             - "@doctrine.orm.entity_manager"
             - "%vkr_translation.language_entity%"
+
+    vkr_translation.drivers.entity:
+        class: VKR\TranslationBundle\Services\EntityTranslationDriver
+        arguments:
+            - "@vkr_translation.class_checker"
 
     vkr_translation.drivers.google:
         class: VKR\TranslationBundle\Services\GoogleTranslationDriver
