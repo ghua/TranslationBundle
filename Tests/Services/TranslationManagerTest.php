@@ -7,9 +7,10 @@ use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
+use VKR\TranslationBundle\Services\Algorithms\DefaultAlgorithm;
 use VKR\TranslationBundle\Services\TranslatedFieldSetter;
 use VKR\TranslationBundle\Services\TranslationManager;
-use VKR\TranslationBundle\Services\TranslationRetriever;
+use VKR\TranslationBundle\TestHelpers\Algorithms\DummyAlgorithm;
 use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
@@ -90,10 +91,10 @@ class TranslationManagerTest extends TestCase
         ;
 
         $localeRetriever = $this->mockLocaleRetriever();
-        $translationRetriever = $this->mockTranslationRetriever();
         $translatedFieldSetter = $this->mockTranslatedFieldSetter();
+        $defaultAlgorithm = $this->mockDefaultAlgorithm();
         $this->translationManager = new TranslationManager(
-            $localeRetriever, $translationRetriever, $translatedFieldSetter
+            $localeRetriever, $translatedFieldSetter, $defaultAlgorithm
         );
     }
 
@@ -191,15 +192,6 @@ class TranslationManagerTest extends TestCase
         $this->translationManager->translate($result, $currentLocale);
     }
 
-    public function testWithNoTranslations()
-    {
-        $currentLocale = 'en';
-        $result = new Dummy();
-        $this->expectException(TranslationException::class);
-        $this->expectExceptionMessage('Translations do not exist or cannot be loaded for ID 1 of entity ' . Dummy::class);
-        $this->translationManager->translate($result, $currentLocale);
-    }
-
     public function testWithOrderingByNonexistentColumn()
     {
         $currentLocale = 'ru';
@@ -219,17 +211,19 @@ class TranslationManagerTest extends TestCase
         $this->translationManager->translate($result, $currentLocale, 'field999');
     }
 
-    public function testWithoutFallbackLocale()
+    public function testWithCustomAlgorithm()
     {
-        $this->defaultLocale = null;
+        $algorithm = new DummyAlgorithm();
+        $this->translationManager->setAlgorithm($algorithm);
         $currentLocale = 'en';
 
         $result = new Dummy();
         $result->addTranslation($this->translationEn[0]);
         $result->addTranslation($this->translationRu[0]);
-        $this->expectException(TranslationException::class);
-        $this->expectExceptionMessage('Default locale must be set before translating');
-        $this->translationManager->translate($result, $currentLocale);
+
+        /** @var Dummy $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale);
+        $this->assertEquals('foo', $translatedResult->getField1());
     }
 
     private function mockLocaleRetriever()
@@ -242,22 +236,19 @@ class TranslationManagerTest extends TestCase
         return $localeRetriever;
     }
 
-    private function mockTranslationRetriever()
-    {
-        $translationRetriever = $this->createMock(TranslationRetriever::class);
-        $translationRetriever->method('getActiveTranslation')
-            ->willReturnCallback([$this, 'getActiveTranslationCallback']);
-        return $translationRetriever;
-    }
-
     private function mockTranslatedFieldSetter()
     {
         $translatedFieldSetter = $this->createMock(TranslatedFieldSetter::class);
         $translatedFieldSetter->method('setTranslatedFields')
             ->willReturnCallback([$this, 'setTranslatedFieldsCallback']);
-        $translatedFieldSetter->method('setTranslatedFieldsWithFallback')
-            ->willReturnCallback([$this, 'setTranslatedFieldsWithFallbackCallback']);
         return $translatedFieldSetter;
+    }
+
+    private function mockDefaultAlgorithm()
+    {
+        $defaultAlgorithm = $this->createMock(DefaultAlgorithm::class);
+        $defaultAlgorithm->method('getTranslation')->willReturnCallback([$this, 'getTranslationCallback']);
+        return $defaultAlgorithm;
     }
 
     public function getCurrentLocaleCallback()
@@ -270,7 +261,7 @@ class TranslationManagerTest extends TestCase
         return $this->defaultLocale;
     }
 
-    public function getActiveTranslationCallback(
+    public function getTranslationCallback(
         TranslatableEntityInterface $record,
         $locale,
         $fallbackLocale
@@ -285,19 +276,15 @@ class TranslationManagerTest extends TestCase
 
     public function setTranslatedFieldsCallback(
         TranslatableEntityInterface $record,
-        TranslationEntityInterface $translation
+        TranslationEntityInterface $translation = null
     ) {
         if ($record instanceof Dummy && $translation instanceof DummyTranslations) {
             $record->setField1($translation->getField1());
             $record->setField2($translation->getField2());
         }
-    }
-
-    public function setTranslatedFieldsWithFallbackCallback(
-        TranslatableEntityInterface $record
-    ) {
         if ($record instanceof DummyWithFallback) {
             $record->setName($record->getSlug());
         }
+        return $record;
     }
 }

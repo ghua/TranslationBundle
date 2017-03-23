@@ -4,32 +4,36 @@ namespace VKR\TranslationBundle\Services;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
+use VKR\TranslationBundle\Interfaces\TranslationAlgorithmInterface;
+use VKR\TranslationBundle\Services\Algorithms\DefaultAlgorithm;
 
 class TranslationManager
 {
-    /**
-     * @var LocaleRetrieverInterface
-     */
+    /** @var LocaleRetrieverInterface */
     private $localeRetriever;
 
-    /**
-     * @var TranslationRetriever
-     */
-    private $translationRetriever;
-
-    /**
-     * @var TranslatedFieldSetter
-     */
+    /** @var TranslatedFieldSetter */
     private $translatedFieldSetter;
+
+    /** @var TranslationAlgorithmInterface */
+    private $algorithm;
 
     public function __construct(
         LocaleRetrieverInterface $localeRetriever,
-        TranslationRetriever $translationRetriever,
-        TranslatedFieldSetter $translatedFieldSetter
+        TranslatedFieldSetter $translatedFieldSetter,
+        DefaultAlgorithm $defaultAlgorithm
     ) {
         $this->localeRetriever = $localeRetriever;
-        $this->translationRetriever = $translationRetriever;
         $this->translatedFieldSetter = $translatedFieldSetter;
+        $this->algorithm = $defaultAlgorithm;
+    }
+
+    /**
+     * @param TranslationAlgorithmInterface $algorithm
+     */
+    public function setAlgorithm(TranslationAlgorithmInterface $algorithm)
+    {
+        $this->algorithm = $algorithm;
     }
 
     /**
@@ -45,7 +49,7 @@ class TranslationManager
         if (!$locale) {
             $locale = $this->localeRetriever->getCurrentLocale();
         }
-        $fallbackLocale = $this->findFallbackLocale();
+        $fallbackLocale = $this->localeRetriever->getDefaultLocale();
         if ($result instanceof TranslatableEntityInterface) {
             return $this->translateSingleRecord($result, $locale, $fallbackLocale);
         }
@@ -72,42 +76,15 @@ class TranslationManager
     }
 
     /**
-     * @param TranslatableEntityInterface $record
-     * @param string|null $locale
-     * @param string $fallbackLocale
+     * @param TranslatableEntityInterface $result
+     * @param string $locale
+     * @param string|null $fallbackLocale
      * @return TranslatableEntityInterface
-     * @throws TranslationException
      */
-    private function translateSingleRecord(
-        TranslatableEntityInterface $record,
-        $locale,
-        $fallbackLocale
-    ) {
-        $activeTranslation = $this->translationRetriever
-            ->getActiveTranslation($record, $locale, $fallbackLocale);
-        if ($activeTranslation) {
-            $this->translatedFieldSetter->setTranslatedFields($record, $activeTranslation);
-            return $record;
-        }
-        if ($record->getTranslationFallback() !== false) {
-            $this->translatedFieldSetter->setTranslatedFieldsWithFallback($record);
-            return $record;
-        }
-        throw new TranslationException(
-            'Translations do not exist or cannot be loaded for ID ' . $record->getId() . ' of entity ' . get_class($record)
-        );
-    }
-
-    /**
-     * @return string
-     * @throws TranslationException
-     */
-    private function findFallbackLocale()
+    private function translateSingleRecord(TranslatableEntityInterface $result, $locale, $fallbackLocale)
     {
-        $locale = $this->localeRetriever->getDefaultLocale();
-        if (!$locale) {
-            throw new TranslationException('Default locale must be set before translating');
-        }
-        return $locale;
+        $translation = $this->algorithm->getTranslation($result, $locale, $fallbackLocale);
+        $result = $this->translatedFieldSetter->setTranslatedFields($result, $translation);
+        return $result;
     }
 }

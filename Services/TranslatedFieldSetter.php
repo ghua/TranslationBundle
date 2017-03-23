@@ -9,13 +9,20 @@ class TranslatedFieldSetter
 {
     /**
      * @param TranslatableEntityInterface $translated
-     * @param TranslationEntityInterface $translation
+     * @param TranslationEntityInterface|null $translation
+     * @return TranslatableEntityInterface
      * @throws TranslationException
      */
     public function setTranslatedFields(
         TranslatableEntityInterface $translated,
-        TranslationEntityInterface $translation
+        TranslationEntityInterface $translation = null
     ) {
+        if (!$translation) {
+            if ($translated->getTranslationFallback() !== false) {
+                return $this->setTranslatedFieldsWithFallback($translated);
+            }
+            return $translated;
+        }
         $translatableFields = $this->checkTranslatableFields($translated);
         foreach ($translatableFields as $field) {
             $getter = 'get' . ucfirst($field);
@@ -32,6 +39,28 @@ class TranslatedFieldSetter
             }
             $translated->$setter($translation->$getter());
         }
+        return $translated;
+    }
+
+    /**
+     * @param TranslatableEntityInterface $translated
+     * @return TranslatableEntityInterface
+     * @throws TranslationException
+     */
+    private function setTranslatedFieldsWithFallback(TranslatableEntityInterface $translated)
+    {
+        $translatableFields = $this->checkTranslatableFields($translated);
+        foreach ($translatableFields as $field) {
+            $fallback = $translated->getTranslationFallback($field);
+            $setter = 'set' . ucfirst($field);
+            if (!method_exists($translated, $setter)) {
+                throw new TranslationException(
+                    'Method ' . $setter . ' must exist in class ' . get_class($translated)
+                );
+            }
+            $translated->$setter($fallback);
+        }
+        return $translated;
     }
 
     /**
@@ -46,24 +75,5 @@ class TranslatedFieldSetter
             throw new TranslationException('getTranslatableFields() must return a non-empty array');
         }
         return $translatableFields;
-    }
-
-    /**
-     * @param TranslatableEntityInterface $translated
-     * @throws TranslationException
-     */
-    public function setTranslatedFieldsWithFallback(TranslatableEntityInterface $translated)
-    {
-        $translatableFields = $this->checkTranslatableFields($translated);
-        foreach ($translatableFields as $field) {
-            $fallback = $translated->getTranslationFallback($field);
-            $setter = 'set' . ucfirst($field);
-            if (!method_exists($translated, $setter)) {
-                throw new TranslationException(
-                    'Method ' . $setter . ' must exist in class ' . get_class($translated)
-                );
-            }
-            $translated->$setter($fallback);
-        }
     }
 }

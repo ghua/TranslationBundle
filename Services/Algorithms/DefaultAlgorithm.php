@@ -1,19 +1,20 @@
 <?php
-namespace VKR\TranslationBundle\Services;
+namespace VKR\TranslationBundle\Services\Algorithms;
 
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
+use VKR\TranslationBundle\Exception\GoogleTranslationException;
+use VKR\TranslationBundle\Exception\TranslationException;
+use VKR\TranslationBundle\Interfaces\TranslationAlgorithmInterface;
+use VKR\TranslationBundle\Services\DoctrineTranslationDriver;
+use VKR\TranslationBundle\Services\GoogleTranslationDriver;
 
-class TranslationRetriever
+class DefaultAlgorithm implements TranslationAlgorithmInterface
 {
-    /**
-     * @var DoctrineTranslationDriver
-     */
+    /** @var DoctrineTranslationDriver */
     private $doctrineTranslationDriver;
 
-    /**
-     * @var GoogleTranslationDriver
-     */
+    /** @var GoogleTranslationDriver */
     private $googleTranslationDriver;
 
     public function __construct(
@@ -27,10 +28,31 @@ class TranslationRetriever
     /**
      * @param TranslatableEntityInterface $record
      * @param string $locale
+     * @param string|null $fallbackLocale
+     * @return TranslationEntityInterface
+     * @throws TranslationException
+     */
+    public function getTranslation(TranslatableEntityInterface $record, $locale, $fallbackLocale = null)
+    {
+        if ($fallbackLocale === null) {
+            throw new TranslationException('Fallback locale must be set in this algorithm');
+        }
+        $activeTranslation = $this->getActiveTranslation($record, $locale, $fallbackLocale);
+        if (!$activeTranslation) {
+            throw new TranslationException(
+                'Translations do not exist or cannot be loaded for ID ' . $record->getId() . ' of entity ' . get_class($record)
+            );
+        }
+        return $activeTranslation;
+    }
+
+    /**
+     * @param TranslatableEntityInterface $record
+     * @param string $locale
      * @param string $fallbackLocale
      * @return null|TranslationEntityInterface
      */
-    public function getActiveTranslation(TranslatableEntityInterface $record, $locale, $fallbackLocale)
+    private function getActiveTranslation(TranslatableEntityInterface $record, $locale, $fallbackLocale)
     {
         $currentLocaleTranslation = $this->doctrineTranslationDriver->getTranslation($record, $locale);
         if ($currentLocaleTranslation) {
@@ -40,18 +62,20 @@ class TranslationRetriever
         if (!$fallbackTranslation) {
             return null;
         }
-        if (method_exists($record, 'isGoogleTranslatable') && $record->isGoogleTranslatable()) {
+        if (!method_exists($record, 'isGoogleTranslatable') || !$record->isGoogleTranslatable()) {
+            return $fallbackTranslation;
+        }
+        try {
             $googleTranslation = $this->googleTranslationDriver
                 ->getTranslation($record, $locale, $fallbackTranslation);
             if (!$googleTranslation) {
                 $googleTranslation = $this->googleTranslationDriver
                     ->getTranslation($record, $fallbackLocale, $fallbackTranslation);
             }
-            if ($googleTranslation) {
-                return $googleTranslation;
-            }
+        } catch (GoogleTranslationException $e) {
+            return $fallbackTranslation;
         }
-        return $fallbackTranslation;
+        return $googleTranslation;
     }
 
     /**

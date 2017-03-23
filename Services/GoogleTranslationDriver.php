@@ -5,6 +5,7 @@ use Google\Cloud\Translate\TranslateClient;
 use VKR\TranslationBundle\Decorators\GoogleClientDecorator;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
+use VKR\TranslationBundle\Exception\GoogleTranslationException;
 use VKR\TranslationBundle\Exception\TranslationException;
 
 class GoogleTranslationDriver
@@ -34,6 +35,7 @@ class GoogleTranslationDriver
      * @param TranslationEntityInterface $translation
      * @return TranslationEntityInterface
      * @throws TranslationException
+     * @throws GoogleTranslationException
      */
     public function getTranslation(
         TranslatableEntityInterface $record,
@@ -59,7 +61,7 @@ class GoogleTranslationDriver
             try {
                 $valueJson = $this->googleClient->translate($value, $options);
             } catch (\Exception $e) {
-                throw new TranslationException('Error from Google Translate API');
+                throw new GoogleTranslationException('Error from Google Translate API');
             }
             if (isset($valueJson['text'])) {
                 $value = $valueJson['text'];

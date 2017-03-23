@@ -4,6 +4,7 @@ namespace VKR\TranslationBundle\Tests\Services;
 use Google\Cloud\Translate\TranslateClient;
 use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Decorators\GoogleClientDecorator;
+use VKR\TranslationBundle\Exception\GoogleTranslationException;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\GoogleTranslationDriver;
 use VKR\TranslationBundle\Services\TranslationClassChecker;
@@ -103,7 +104,7 @@ class GoogleTranslationDriverTest extends TestCase
             ->setField1('Dog')
             ->setField2('Cat')
         ;
-        $this->expectException(TranslationException::class);
+        $this->expectException(GoogleTranslationException::class);
         $this->expectExceptionMessage('Error from Google Translate API');
         $this->googleTranslationDriver->getTranslation($record, $target, $value);
     }
