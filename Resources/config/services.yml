@@ -63,6 +63,7 @@ services:
         arguments:
             - "@vkr_translation.class_checker"
             - "@vkr_translation.translation_manager"
+        lazy: true
 
     vkr_translation.doctrine_event_subscriber:
         class: VKR\TranslationBundle\Services\TranslationEventSubscriber
