@@ -11,6 +11,7 @@ use VKR\TranslationBundle\Services\TranslationClassChecker;
 use VKR\TranslationBundle\Services\TranslationManager;
 use VKR\TranslationBundle\Services\TranslationProxyFactory;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
+use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLazy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 
@@ -97,6 +98,33 @@ class TranslationProxyFactoryTest extends TestCase
 
         $this->assertNull($dummyEntity->getTranslation()->getField1());
         $this->assertNull($dummyEntity->getTranslation()->getField2());
+    }
+
+    public function testEntityWithoutLazyTranslatableTrait()
+    {
+        $dummyLanguageEntity = new DummyLanguageEntity();
+        $dummyLanguageEntity->setCode('en');
+
+        $dummyEntity = new Dummy();
+        $dummyTranslation = new DummyTranslations();
+        $dummyTranslation->setLanguage($dummyLanguageEntity)
+            ->setField1('value1')
+            ->setField2('value2');
+
+        $this->translationClassChecker
+            ->shouldReceive('checkTranslationClass')
+            ->with(m::mustBe($dummyEntity))
+            ->once()
+            ->andReturn(DummyTranslations::class);
+
+        $this->translationManager
+            ->shouldReceive('getTranslation')
+            ->with(m::mustBe($dummyEntity))
+            ->never();
+
+        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+
+        $this->assertFalse($factory->initialize($dummyEntity));
     }
 
     public function tearDown()
