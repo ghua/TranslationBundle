@@ -127,6 +127,33 @@ class TranslationProxyFactoryTest extends TestCase
         $this->assertFalse($factory->initialize($dummyEntity));
     }
 
+    public function testEntityWithoutAppropriateInterface()
+    {
+        $dummyLanguageEntity = new DummyLanguageEntity();
+        $dummyLanguageEntity->setCode('en');
+
+        $dummyEntity = new Dummy();
+        $dummyTranslation = new DummyTranslations();
+        $dummyTranslation->setLanguage($dummyLanguageEntity)
+            ->setField1('value1')
+            ->setField2('value2');
+
+        $this->translationClassChecker
+            ->shouldReceive('checkTranslationClass')
+            ->with(m::mustBe($dummyEntity))
+            ->once()
+            ->andThrow(new TranslationException('Class $translationClass does not exist'));
+
+        $this->translationManager
+            ->shouldReceive('getTranslation')
+            ->with(m::mustBe($dummyEntity))
+            ->never();
+
+        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+
+        $this->assertFalse($factory->initialize($dummyEntity));
+    }
+
     public function tearDown()
     {
         m::close();
