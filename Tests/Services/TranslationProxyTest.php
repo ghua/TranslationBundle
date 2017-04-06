@@ -28,22 +28,35 @@ class TranslationProxyFactoryTest extends TestCase
      */
     private $translationClassChecker;
 
+    /**
+     * @var DummyLanguageEntity
+     */
+    private $dummyLanguageEntity;
+
+    /**
+     * @var DummyTranslations
+     */
+    private $dummyTranslation;
+
     public function setUp()
     {
         $this->translationManager = m::mock(TranslationManager::class);
         $this->translationClassChecker = m::mock(TranslationClassChecker::class);
-    }
 
-    public function testTranslationExist()
-    {
         $dummyLanguageEntity = new DummyLanguageEntity();
         $dummyLanguageEntity->setCode('en');
+        $this->dummyLanguageEntity = $dummyLanguageEntity;
 
-        $dummyEntity = new DummyLazy();
         $dummyTranslation = new DummyTranslations();
         $dummyTranslation->setLanguage($dummyLanguageEntity)
             ->setField1('value1')
             ->setField2('value2');
+        $this->dummyTranslation = $dummyTranslation;
+    }
+
+    public function testTranslationExist()
+    {
+        $dummyEntity = new DummyLazy();
 
         $this->translationClassChecker
             ->shouldReceive('checkTranslationClass')
@@ -55,7 +68,7 @@ class TranslationProxyFactoryTest extends TestCase
             ->shouldReceive('getTranslation')
             ->with(m::mustBe($dummyEntity))
             ->once()
-            ->andReturn($dummyTranslation);
+            ->andReturn($this->dummyTranslation);
 
         $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
 
@@ -63,20 +76,13 @@ class TranslationProxyFactoryTest extends TestCase
 
         $this->assertFalse($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
 
-        $this->assertEquals($dummyTranslation->getField1(), $dummyEntity->getTranslation()->getField1());
-        $this->assertEquals($dummyTranslation->getField2(), $dummyEntity->getTranslation()->getField2());
+        $this->assertEquals($this->dummyTranslation->getField1(), $dummyEntity->getTranslation()->getField1());
+        $this->assertEquals($this->dummyTranslation->getField2(), $dummyEntity->getTranslation()->getField2());
     }
 
     public function testTranslationDoesNotExist()
     {
-        $dummyLanguageEntity = new DummyLanguageEntity();
-        $dummyLanguageEntity->setCode('en');
-
         $dummyEntity = new DummyLazy();
-        $dummyTranslation = new DummyTranslations();
-        $dummyTranslation->setLanguage($dummyLanguageEntity)
-            ->setField1('value1')
-            ->setField2('value2');
 
         $this->translationClassChecker
             ->shouldReceive('checkTranslationClass')
@@ -102,14 +108,7 @@ class TranslationProxyFactoryTest extends TestCase
 
     public function testEntityWithoutLazyTranslatableTrait()
     {
-        $dummyLanguageEntity = new DummyLanguageEntity();
-        $dummyLanguageEntity->setCode('en');
-
         $dummyEntity = new Dummy();
-        $dummyTranslation = new DummyTranslations();
-        $dummyTranslation->setLanguage($dummyLanguageEntity)
-            ->setField1('value1')
-            ->setField2('value2');
 
         $this->translationClassChecker
             ->shouldReceive('checkTranslationClass')
@@ -129,14 +128,7 @@ class TranslationProxyFactoryTest extends TestCase
 
     public function testEntityWithoutAppropriateInterface()
     {
-        $dummyLanguageEntity = new DummyLanguageEntity();
-        $dummyLanguageEntity->setCode('en');
-
         $dummyEntity = new Dummy();
-        $dummyTranslation = new DummyTranslations();
-        $dummyTranslation->setLanguage($dummyLanguageEntity)
-            ->setField1('value1')
-            ->setField2('value2');
 
         $this->translationClassChecker
             ->shouldReceive('checkTranslationClass')
