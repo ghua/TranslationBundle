@@ -2,6 +2,7 @@
 namespace VKR\TranslationBundle\Services;
 
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
+use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
 use VKR\TranslationBundle\Interfaces\TranslationAlgorithmInterface;
@@ -79,12 +80,32 @@ class TranslationManager
      * @param TranslatableEntityInterface $result
      * @param string $locale
      * @param string|null $fallbackLocale
+     * @return TranslationEntityInterface
+     */
+    public function getTranslation(TranslatableEntityInterface $result, $locale = '', $fallbackLocale = '')
+    {
+        // for backward capability
+        if (!$locale) {
+            $locale = $this->localeRetriever->getCurrentLocale();
+        }
+        if (!$fallbackLocale) {
+            $fallbackLocale = $this->localeRetriever->getDefaultLocale();
+        }
+
+        return $this->algorithm->getTranslation($result, $locale, $fallbackLocale);
+    }
+
+    /**
+     * @param TranslatableEntityInterface $result
+     * @param string $locale
+     * @param string|null $fallbackLocale
      * @return TranslatableEntityInterface
      */
     private function translateSingleRecord(TranslatableEntityInterface $result, $locale, $fallbackLocale)
     {
-        $translation = $this->algorithm->getTranslation($result, $locale, $fallbackLocale);
+        $translation = $this->getTranslation($result, $locale, $fallbackLocale);
         $result = $this->translatedFieldSetter->setTranslatedFields($result, $translation);
         return $result;
     }
+
 }

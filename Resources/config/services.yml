@@ -57,3 +57,14 @@ services:
 
     vkr_translation.decorators.google_client:
         class: VKR\TranslationBundle\Decorators\GoogleClientDecorator
+
+    vkr_translation.translation_proxy_factory:
+        class: VKR\TranslationBundle\Services\TranslationProxyFactory
+        arguments:
+            - "@vkr_translation.class_checker"
+            - "@vkr_translation.translation_manager"
+
+    vkr_translation.doctrine_event_subscriber:
+        class: VKR\TranslationBundle\Services\TranslationEventSubscriber
+        calls:
+            - [ "setTranslationProxyFactory", ["@vkr_translation.translation_proxy_factory"]]
