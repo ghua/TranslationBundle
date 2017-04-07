@@ -102,8 +102,9 @@ class TranslationProxyFactoryTest extends TestCase
 
         $this->assertFalse($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
 
-        $this->assertNull($dummyEntity->getTranslation()->getField1());
-        $this->assertNull($dummyEntity->getTranslation()->getField2());
+        $this->expectException(TranslationException::class);
+
+        $dummyEntity->getTranslation()->getField1();
     }
 
     public function testEntityWithoutLazyTranslatableTrait()

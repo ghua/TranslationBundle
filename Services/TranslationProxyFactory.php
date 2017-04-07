@@ -116,15 +116,10 @@ class TranslationProxyFactory
                 $propertyReflection = $this->entityReflection->getProperty('translation');
                 $propertyReflection->setAccessible(true);
 
-                try {
-                    $translation = $this->translationManager->getTranslation($this->entity);
-                    $propertyReflection->setValue($this->entity, $translation);
+                $translation = $this->translationManager->getTranslation($this->entity);
+                $propertyReflection->setValue($this->entity, $translation);
 
-                    return $translation->$name();
-                } catch (TranslationException $e)
-                {
-                    return null;
-                }
+                return $translation->$name();
             }
         };
 
