@@ -74,10 +74,9 @@ class TranslationProxyFactoryTest extends TestCase
 
         $this->assertTrue($factory->initialize($dummyEntity));
 
-        $this->assertFalse($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
-
         $this->assertEquals($this->dummyTranslation->getField1(), $dummyEntity->getTranslation()->getField1());
         $this->assertEquals($this->dummyTranslation->getField2(), $dummyEntity->getTranslation()->getField2());
+        $this->assertTrue($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
     }
 
     public function testTranslationDoesNotExist()
@@ -100,11 +99,11 @@ class TranslationProxyFactoryTest extends TestCase
 
         $this->assertTrue($factory->initialize($dummyEntity));
 
-        $this->assertFalse($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
-
         $this->expectException(TranslationException::class);
 
         $dummyEntity->getTranslation()->getField1();
+
+        $this->assertFalse($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
     }
 
     public function testEntityWithoutLazyTranslatableTrait()
@@ -145,6 +144,33 @@ class TranslationProxyFactoryTest extends TestCase
         $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
 
         $this->assertFalse($factory->initialize($dummyEntity));
+    }
+
+    public function testTranslationObjectReplacement()
+    {
+        $dummyEntity = new DummyLazy();
+
+        $this->translationClassChecker
+            ->shouldReceive('checkTranslationClass')
+            ->with(m::mustBe($dummyEntity))
+            ->once()
+            ->andReturn(DummyTranslations::class);
+
+        $this->translationManager
+            ->shouldReceive('getTranslation')
+            ->with(m::mustBe($dummyEntity))
+            ->once()
+            ->andReturn($this->dummyTranslation);
+
+        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+
+        $this->assertTrue($factory->initialize($dummyEntity));
+
+        $translation = $dummyEntity->getTranslation();
+
+        $this->assertTrue($translation instanceof TranslationEntityInterface);
+        $this->assertEquals($this->dummyTranslation->getField1(), $translation->getField1());
+        $this->assertEquals($this->dummyTranslation->getField2(), $translation->getField2());
     }
 
     public function tearDown()

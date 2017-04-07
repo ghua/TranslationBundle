@@ -83,7 +83,7 @@ class TranslationProxyFactory
             /**
              * @var bool
              */
-            private $isTouched = false;
+            private $isLoaded = false;
 
             public function __construct(TranslatableEntityInterface $entity, TranslationManager $translationManager)
             {
@@ -93,25 +93,25 @@ class TranslationProxyFactory
             }
 
             /**
-             * @param bool $isTouched
+             * @param bool $isLoaded
              *
              * @return $this
              */
-            public function setIsTouched($isTouched)
+            public function setIsLoaded($isLoaded)
             {
-                $this->isTouched = $isTouched;
+                $this->isLoaded = $isLoaded;
 
                 return $this;
             }
 
-            public function __call($name, $arguments)
+            public function __fetch()
             {
-                if (true === $this->isTouched) {
+                if (true === $this->isLoaded) {
 
                     return null;
                 }
 
-                $this->setIsTouched(true);
+                $this->isLoaded = true;
 
                 $propertyReflection = $this->entityReflection->getProperty('translation');
                 $propertyReflection->setAccessible(true);
@@ -119,7 +119,18 @@ class TranslationProxyFactory
                 $translation = $this->translationManager->getTranslation($this->entity);
                 $propertyReflection->setValue($this->entity, $translation);
 
-                return $translation->$name();
+                return $translation;
+            }
+
+            public function __call($name, $arguments)
+            {
+                $translation =  $this->__fetch();
+
+                if (is_callable(array($translation, $name))) {
+                    return $translation->$name();
+                }
+
+                throw new \LogicException();
             }
         };
 
