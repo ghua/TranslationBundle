@@ -1,0 +1,44 @@
+framework:
+    secret:          secret
+    test:            ~
+    router:          { resource: "%kernel.root_dir%/routing.yml" }
+    form:            true
+    csrf_protection: true
+    session:
+        storage_id: session.storage.mock_file
+    profiler:
+        collect: false
+    validation:      { enable_annotations: true }
+    templating:
+        engines: ['twig']
+
+doctrine:
+    dbal:
+        driver:   pdo_sqlite
+        path: "%kernel.root_dir%/cache/test/test.db"
+        dbname: "%kernel.root_dir%/cache/test/test.db"
+        charset:  UTF8
+    orm:
+        auto_generate_proxy_classes: "%kernel.debug%"
+        auto_mapping: true
+        mappings:
+            Acme:
+                type: yml
+                is_bundle: false
+                dir: %kernel.root_dir%/Acme/config/doctrine
+                prefix: Acme\Entity
+                alias: Acme
+        resolve_target_entities:
+            \VKR\TranslationBundle\Entity\LanguageEntityInterface: Acme\Entity\Language
+        repository_factory: vkr_translation.repository_factory
+
+services:
+    locale_retriever:
+        class: Acme\Service\LocaleRetriever
+    acme.dummy_repository:
+        class: Acme\Repository\DummyRepository
+        parent: vkr_translation.abstract.entity_repository
+        arguments: [ "Acme:Dummy" ]
+
+vkr_translation:
+    locale_retriever_service: "locale_retriever"

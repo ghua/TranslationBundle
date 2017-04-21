@@ -6,25 +6,37 @@ use Doctrine\ORM\EntityRepository;
 use PHPUnit\Framework\TestCase;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\DoctrineTranslationDriver;
+use VKR\TranslationBundle\Services\TranslationClassChecker;
 use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 
 class DoctrineTranslationDriverTest extends TestCase
 {
-    const LANGUAGE_ENTITY_NAME = '';
 
     /**
      * @var DoctrineTranslationDriver
      */
     private $doctrineTranslationDriver;
 
+    /**
+     * @var DummyLanguageEntity[]
+     */
+    private $dummyLanguages;
+
     public function setUp()
     {
         $entityManager = $this->mockEntityManager();
-        $this->doctrineTranslationDriver = new DoctrineTranslationDriver(
-            $entityManager, self::LANGUAGE_ENTITY_NAME
-        );
+        $translationClassChecker = $this->mockTranslationClassChecker();
+        $this->doctrineTranslationDriver = new DoctrineTranslationDriver();
+        $this->doctrineTranslationDriver
+            ->setEntityManager($entityManager)
+            ->setTranslationClassChecker($translationClassChecker);
+
+        $this->dummyLanguages['en'] = (new DummyLanguageEntity())
+            ->setCode('en');
+        $this->dummyLanguages['de'] = (new DummyLanguageEntity())
+            ->setCode('de');
     }
 
     public function testGetTranslation()
@@ -34,15 +46,14 @@ class DoctrineTranslationDriverTest extends TestCase
         $english->setCode('en');
         $translation1 = new DummyTranslations();
         $translation1
-            ->setLanguage($english)
+            ->setLanguage($this->dummyLanguages['en'])
             ->setField1('Dog')
         ;
         $record->addTranslation($translation1);
-        $german = new DummyLanguageEntity();
-        $german->setCode('de');
+
         $translation2 = new DummyTranslations();
         $translation2
-            ->setLanguage($german)
+            ->setLanguage($this->dummyLanguages['de'])
             ->setField1('Hund')
         ;
         $record->addTranslation($translation2);
@@ -63,11 +74,9 @@ class DoctrineTranslationDriverTest extends TestCase
     public function testWithoutTranslationInNeededLanguage()
     {
         $record = new Dummy();
-        $german = new DummyLanguageEntity();
-        $german->setCode('de');
         $translation1 = new DummyTranslations();
         $translation1
-            ->setLanguage($german)
+            ->setLanguage($this->dummyLanguages['de'])
             ->setField1('Hund')
         ;
         $record->addTranslation($translation1);
@@ -88,11 +97,9 @@ class DoctrineTranslationDriverTest extends TestCase
     public function testGetFirstTranslation()
     {
         $record = new Dummy();
-        $german = new DummyLanguageEntity();
-        $german->setCode('de');
         $translation1 = new DummyTranslations();
         $translation1
-            ->setLanguage($german)
+            ->setLanguage($this->dummyLanguages['de'])
             ->setField1('Hund')
         ;
         $record->addTranslation($translation1);
@@ -123,11 +130,22 @@ class DoctrineTranslationDriverTest extends TestCase
         return $entityRepository;
     }
 
+    private function mockTranslationClassChecker()
+    {
+        $translationClassChecker = $this->createMock(TranslationClassChecker::class);
+        $translationClassChecker->method('checkTranslationClass')
+            ->willReturn(DummyTranslations::class);
+
+        return $translationClassChecker;
+    }
+
     public function findOneByCallback(array $criteria)
     {
-        if ($criteria['code'] == 'en') {
-            return true;
+        if (isset($criteria['code']) && isset($this->dummyLanguages[$criteria['code']])) {
+
+            return $this->dummyLanguages[$criteria['code']];
         }
-        return false;
+
+        return null;
     }
 }

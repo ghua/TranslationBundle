@@ -29,7 +29,6 @@ services:
         arguments:
             - "@doctrine.orm.entity_manager"
             - "@vkr_translation.class_checker"
-            - "%vkr_translation.language_entity%"
 
     vkr_translation.translated_field_setter:
         class: VKR\TranslationBundle\Services\TranslatedFieldSetter
@@ -39,9 +38,9 @@ services:
 
     vkr_translation.drivers.doctrine:
         class: VKR\TranslationBundle\Services\DoctrineTranslationDriver
-        arguments:
-            - "@doctrine.orm.entity_manager"
-            - "%vkr_translation.language_entity%"
+        calls:
+            - [ setEntityManager, ["@doctrine.orm.entity_manager"]]
+            - [ setTranslationClassChecker, [ "@vkr_translation.class_checker" ]]
 
     vkr_translation.drivers.entity:
         class: VKR\TranslationBundle\Services\EntityTranslationDriver
@@ -53,21 +52,26 @@ services:
         arguments:
             - "@vkr_translation.class_checker"
             - "@vkr_translation.decorators.google_client"
-            - "@=container.hasParameter('vkr_translation.google_api_key') ? parameter('vkr_translation.google_api_key') : ''"
+            - "%vkr_translation.google_api_key%"
 
     vkr_translation.decorators.google_client:
         class: VKR\TranslationBundle\Decorators\GoogleClientDecorator
 
     vkr_translation.translation_proxy_factory:
         class: VKR\TranslationBundle\Services\TranslationProxyFactory
-        arguments:
-            - "@vkr_translation.class_checker"
-            - "@vkr_translation.translation_manager"
         lazy: true
-
-    vkr_translation.doctrine_event_subscriber:
-        class: VKR\TranslationBundle\Services\TranslationEventSubscriber
         calls:
-            - [ "setTranslationProxyFactory", ["@vkr_translation.translation_proxy_factory"]]
+            - [ setTranslationClassChecker, ["@vkr_translation.class_checker"]]
+            - [ setTranslationManager, ["@vkr_translation.translation_manager"]]
         tags:
-            - { name: doctrine.event_subscriber, connection: default }
+            - { name: doctrine.event_subscriber }
+
+    vkr_translation.abstract.entity_repository:
+        class: VKR\TranslationBundle\Repository\TranslatableEntityRepository
+        abstract: true
+        factory: "doctrine.orm.default_entity_manager:getRepository"
+
+    vkr_translation.repository_factory:
+        class: VKR\TranslationBundle\Repository\TranslatableRepositoryFactory
+        calls:
+           - [ setLocaleRetriever, [ "@=service(parameter('vkr_translation.locale_retriever_service'))" ] ]

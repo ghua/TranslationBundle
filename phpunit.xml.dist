@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- http://www.phpunit.de/manual/current/en/appendixes.configuration.html -->
 <phpunit
+        backupGlobals="false"
+        colors="true"
         bootstrap="Tests/bootstrap.php">
     <testsuites>
-        <testsuite name="Project Test Suite">
-            <directory>Tests/</directory>
+        <testsuite name="unit">
+            <directory>./Tests/Services/</directory>
+        </testsuite>
+        <testsuite name="functional">
+            <directory>./Tests/ServicesFunctional/</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <ini name="error_reporting" value="-1" />
+        <server name="KERNEL_DIR" value="Tests/app" />
+    </php>
 </phpunit>

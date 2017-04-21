@@ -3,11 +3,13 @@
 
 namespace VKR\TranslationBundle\Services;
 
+use Doctrine\Common\EventSubscriber;
 use VKR\TranslationBundle\Entity\LazyTranslatableTrait;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 
-class TranslationProxyFactory
+class TranslationProxyFactory implements EventSubscriber
 {
     /**
      * @var TranslationClassChecker
@@ -20,15 +22,27 @@ class TranslationProxyFactory
     private $translationManager;
 
     /**
-     * TranslationProxy constructor.
+     * @param TranslationClassChecker $translationClassChecker
      *
-     * @param TranslationClassChecker     $translationClassChecker
-     * @param TranslationManager          $translationManager
+     * @return $this;
      */
-    public function __construct(TranslationClassChecker $translationClassChecker, TranslationManager $translationManager)
+    public function setTranslationClassChecker($translationClassChecker)
     {
         $this->translationClassChecker = $translationClassChecker;
+
+        return $this;
+    }
+
+    /**
+     * @param TranslationManager $translationManager
+     *
+     * @return $this;
+     */
+    public function setTranslationManager($translationManager)
+    {
         $this->translationManager = $translationManager;
+
+        return $this;
     }
 
     /**
@@ -134,6 +148,33 @@ class TranslationProxyFactory
             }
         };
 
+    }
+
+    /**
+     * @return array
+     */
+    public function getSubscribedEvents()
+    {
+        return array(
+            'postLoad'
+        );
+    }
+
+    /**
+     * @param LifecycleEventArgs $eventArgs
+     */
+    public function postLoad(LifecycleEventArgs $eventArgs)
+    {
+        $entity = $eventArgs->getEntity();
+
+        if (!($entity instanceof TranslatableEntityInterface)) {
+            return;
+        }
+
+        try {
+            $this->initialize($entity);
+        } catch (TranslationException $e) {
+        }
     }
 
 }

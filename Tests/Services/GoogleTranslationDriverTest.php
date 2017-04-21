@@ -18,7 +18,7 @@ use VKR\TranslationBundle\TestHelpers\Entity\DummyWithWrongFieldsTranslations;
 
 class GoogleTranslationDriverTest extends TestCase
 {
-    const GOOGLE_API_KEY = '';
+    const GOOGLE_API_KEY = 'key';
 
     private $shouldErrorOut = false;
 

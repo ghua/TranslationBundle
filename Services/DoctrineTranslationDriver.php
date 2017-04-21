@@ -15,14 +15,32 @@ class DoctrineTranslationDriver
     private $entityManager;
 
     /**
-     * @var string
+     * @var TranslationClassChecker
      */
-    private $languageEntityName;
+    private $translationClassChecker;
 
-    public function __construct(EntityManager $entityManager, $languageEntityName)
+    /**
+     * @param EntityManager $entityManager
+     *
+     * @return $this;
+     */
+    public function setEntityManager($entityManager)
     {
         $this->entityManager = $entityManager;
-        $this->languageEntityName = $languageEntityName;
+
+        return $this;
+    }
+
+    /**
+     * @param TranslationClassChecker $translationClassChecker
+     *
+     * @return $this;
+     */
+    public function setTranslationClassChecker($translationClassChecker)
+    {
+        $this->translationClassChecker = $translationClassChecker;
+
+        return $this;
     }
 
     /**
@@ -32,9 +50,24 @@ class DoctrineTranslationDriver
     public function getFirstTranslation(TranslatableEntityInterface $record)
     {
         $translations = $record->getTranslations();
-        if (isset($translations[0])) {
-            return $translations[0];
+        if (!$translations->isEmpty()) {
+
+            return $translations->first();
+        } else {
+            $translationClass = $this->translationClassChecker->checkTranslationClass($record);
+
+            /**
+             * @var TranslationEntityInterface $firstTranslation
+             */
+            $firstTranslation = $this->entityManager->getRepository($translationClass)
+                ->findOneBy(['entity' => $record]);
+
+            if ($firstTranslation) {
+
+                return $firstTranslation;
+            }
         }
+
         return null;
     }
 
@@ -45,27 +78,32 @@ class DoctrineTranslationDriver
      */
     public function getTranslation(TranslatableEntityInterface $record, $locale)
     {
-        $this->checkLocale($locale);
-        $translations = $record->getTranslations();
-        foreach ($translations as $translation) {
-            if ($translation->getLanguage()->getCode() == $locale) {
-                return $translation;
-            }
-        }
-        return null;
+        $targetLanguage = $this->getLanguageByLocaleCode($locale);
+
+        $translations = $record->getTranslations()
+            ->filter(function (TranslationEntityInterface $translationEntity) use ($targetLanguage) {
+                return $translationEntity->getLanguage() === $targetLanguage;
+            });
+
+        return $translations->isEmpty() ? null : $translations->first();
     }
 
     /**
      * @param string $locale
      * @throws TranslationException
+     *
+     * @return LanguageEntityInterface
      */
-    private function checkLocale($locale)
+    private function getLanguageByLocaleCode($locale)
     {
         /** @var LanguageEntityInterface|null $language */
-        $language = $this->entityManager->getRepository($this->languageEntityName)
+        $language = $this->entityManager
+            ->getRepository(LanguageEntityInterface::class)
             ->findOneBy(['code' => $locale]);
         if (!$language) {
             throw new TranslationException("Locale $locale not found in the DB");
         }
+
+        return $language;
     }
 }

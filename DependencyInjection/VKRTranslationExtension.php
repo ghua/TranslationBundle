@@ -12,8 +12,8 @@ class VKRTranslationExtension extends Extension
     {
         $configuration = new Configuration();
         $processedConfiguration = $this->processConfiguration($configuration, $configs);
-        $container->setParameter('vkr_translation.language_entity', $processedConfiguration['language_entity']);
         $container->setParameter('vkr_translation.locale_retriever_service', $processedConfiguration['locale_retriever_service']);
+        $container->setParameter('vkr_translation.google_api_key', $processedConfiguration['google_api_key']);
         $loader = new YamlFileLoader(
             $container,
             new FileLocator(__DIR__.'/../Resources/config')

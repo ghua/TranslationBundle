@@ -70,7 +70,9 @@ class TranslationProxyFactoryTest extends TestCase
             ->once()
             ->andReturn($this->dummyTranslation);
 
-        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+        $factory = (new TranslationProxyFactory())
+            ->setTranslationClassChecker($this->translationClassChecker)
+            ->setTranslationManager($this->translationManager);
 
         $this->assertTrue($factory->initialize($dummyEntity));
 
@@ -95,7 +97,9 @@ class TranslationProxyFactoryTest extends TestCase
             ->once()
             ->andThrow(new TranslationException('Translations do not exist or cannot be loaded'));
 
-        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+        $factory = (new TranslationProxyFactory())
+            ->setTranslationClassChecker($this->translationClassChecker)
+            ->setTranslationManager($this->translationManager);
 
         $this->assertTrue($factory->initialize($dummyEntity));
 
@@ -121,7 +125,9 @@ class TranslationProxyFactoryTest extends TestCase
             ->with(m::mustBe($dummyEntity))
             ->never();
 
-        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+        $factory = (new TranslationProxyFactory())
+            ->setTranslationClassChecker($this->translationClassChecker)
+            ->setTranslationManager($this->translationManager);
 
         $this->assertFalse($factory->initialize($dummyEntity));
     }
@@ -141,7 +147,9 @@ class TranslationProxyFactoryTest extends TestCase
             ->with(m::mustBe($dummyEntity))
             ->never();
 
-        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+        $factory = (new TranslationProxyFactory())
+            ->setTranslationClassChecker($this->translationClassChecker)
+            ->setTranslationManager($this->translationManager);
 
         $this->assertFalse($factory->initialize($dummyEntity));
     }
@@ -162,7 +170,9 @@ class TranslationProxyFactoryTest extends TestCase
             ->once()
             ->andReturn($this->dummyTranslation);
 
-        $factory = new TranslationProxyFactory($this->translationClassChecker, $this->translationManager);
+        $factory = (new TranslationProxyFactory())
+            ->setTranslationClassChecker($this->translationClassChecker)
+            ->setTranslationManager($this->translationManager);
 
         $this->assertTrue($factory->initialize($dummyEntity));
 

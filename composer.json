@@ -17,11 +17,18 @@
     },
     "require-dev": {
         "phpunit/phpunit": ">=5.4",
-        "mockery/mockery": "@stable"
+        "mockery/mockery": "@stable",
+        "doctrine/doctrine-fixtures-bundle": "@stable",
+        "ocramius/proxy-manager": "@stable"
     },
     "autoload": {
         "psr-4": {
             "VKR\\TranslationBundle\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Acme\\": "Tests/app/Acme/"
         }
     }
 }

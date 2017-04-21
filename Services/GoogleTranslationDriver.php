@@ -26,7 +26,10 @@ class GoogleTranslationDriver
         $googleApiKey = ''
     ) {
         $this->translationClassChecker = $translationClassChecker;
-        $this->googleClient = $decorator->createClient($googleApiKey);
+
+        if ($googleApiKey) {
+            $this->googleClient = $decorator->createClient($googleApiKey);
+        }
     }
 
     /**
@@ -42,6 +45,10 @@ class GoogleTranslationDriver
         $locale,
         TranslationEntityInterface $translation
     ) {
+        if (null === $this->googleClient) {
+            throw new GoogleTranslationException('Google API key must be defined (vkr_translation.google_api_key)');
+        }
+
         $translatableFields = $record->getTranslatableFields();
         $source = $translation->getLanguage()->getCode();
         $source = $this->getShortLocaleCode($source);

@@ -13,8 +13,12 @@ class Configuration implements ConfigurationInterface
         /** @noinspection PhpUndefinedMethodInspection */
         $rootNode
             ->children()
-                ->scalarNode('language_entity')->end()
-                ->scalarNode('locale_retriever_service')->end()
+                ->scalarNode('locale_retriever_service')
+                    ->isRequired()
+                ->end()
+                ->scalarNode('google_api_key')
+                    ->defaultNull()
+                ->end()
             ->end()
         ;
         return $treeBuilder;

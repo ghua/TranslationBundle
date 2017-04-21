@@ -1,0 +1,38 @@
+Acme\Entity\DummyTranslation:
+    type: entity
+    table: dummy_translations
+    id:
+        id:
+            type: integer
+            nullable: false
+            options:
+                unsigned: true
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: text
+            nullable: false
+            length: 200
+            options:
+                fixed: false
+    manyToOne:
+        language:
+            targetEntity: VKR\TranslationBundle\Entity\LanguageEntityInterface
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                language_id:
+                    referencedColumnName: id
+            orphanRemoval: false
+        entity:
+            targetEntity: Dummy
+            cascade: {  }
+            mappedBy: null
+            inversedBy: translations
+            joinColumns:
+                entity_id:
+                    referencedColumnName: id
+            orphanRemoval: false
