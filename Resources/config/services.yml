@@ -19,6 +19,7 @@ services:
 
     vkr_translation.translation_manager:
         class: VKR\TranslationBundle\Services\TranslationManager
+        lazy: true
         arguments:
             - "@=service(parameter('vkr_translation.locale_retriever_service'))"
             - "@vkr_translation.translated_field_setter"
@@ -26,6 +27,7 @@ services:
 
     vkr_translation.translation_updater:
         class: VKR\TranslationBundle\Services\TranslationUpdater
+        lazy: true
         arguments:
             - "@doctrine.orm.entity_manager"
             - "@vkr_translation.class_checker"
