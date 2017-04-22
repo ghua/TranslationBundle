@@ -19,11 +19,6 @@ class TranslationUpdater
      */
     private $translationClassChecker;
 
-    /**
-     * @var string
-     */
-    private $languageEntityName;
-
     public function __construct(
         EntityManager $entityManager,
         TranslationClassChecker $translationClassChecker,
@@ -31,7 +26,6 @@ class TranslationUpdater
     ) {
         $this->entityManager = $entityManager;
         $this->translationClassChecker = $translationClassChecker;
-        $this->languageEntityName = $languageEntityName;
     }
 
     /**
@@ -47,7 +41,7 @@ class TranslationUpdater
     ) {
         $translationClass = $this->translationClassChecker->checkTranslationClass($entity);
         /** @var LanguageEntityInterface|null $language */
-        $language = $this->entityManager->getRepository($this->languageEntityName)
+        $language = $this->entityManager->getRepository(LanguageEntityInterface::class)
             ->findOneBy(['code' => $locale]);
         if (!$language) {
             throw new TranslationException("Locale $locale not found in the DB");
