@@ -21,8 +21,7 @@ class TranslationUpdater
 
     public function __construct(
         EntityManager $entityManager,
-        TranslationClassChecker $translationClassChecker,
-        $languageEntityName
+        TranslationClassChecker $translationClassChecker
     ) {
         $this->entityManager = $entityManager;
         $this->translationClassChecker = $translationClassChecker;
