@@ -73,10 +73,16 @@ class TranslatableEntityRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('e');
 
-        return $qb->leftJoin('e.translations', 't')
-            ->join('t.language', 'l', Expr\Join::WITH, $qb->expr()->eq('l.code', ':language_code'))
-            ->select('e', 't', 'l')
-            ->setParameter(':language_code', $this->localeRetriever->getCurrentLocale());
+        try {
+            return $qb->leftJoin('e.translations', 't')
+                ->join('t.language', 'l', Expr\Join::WITH, $qb->expr()->eq('l.code', ':language_code'))
+                ->select('e', 't', 'l')
+                ->setParameter(':language_code', $this->localeRetriever->getCurrentLocale());
+        } catch (\Exception $e) {
+
+            return $qb;
+        }
+
     }
 
 }
