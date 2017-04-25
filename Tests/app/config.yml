@@ -35,6 +35,7 @@ doctrine:
 services:
     locale_retriever:
         class: Acme\Service\LocaleRetriever
+        arguments: [ '@doctrine.orm.entity_manager' ]
     acme.dummy_repository:
         class: Acme\Repository\DummyRepository
         parent: vkr_translation.abstract.entity_repository

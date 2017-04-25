@@ -3,6 +3,7 @@
 
 namespace Acme\Service;
 
+use Doctrine\ORM\EntityManager;
 use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
 
 class LocaleRetriever implements LocaleRetrieverInterface
@@ -32,6 +33,10 @@ class LocaleRetriever implements LocaleRetrieverInterface
         $this->currentLocale = $currentLocale;
 
         return $this;
+    }
+
+    public function __construct(EntityManager $entityManager)
+    {
     }
 
 }

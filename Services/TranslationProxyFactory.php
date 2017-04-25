@@ -4,6 +4,7 @@
 namespace VKR\TranslationBundle\Services;
 
 use Doctrine\Common\EventSubscriber;
+use Symfony\Component\DependencyInjection\Container;
 use VKR\TranslationBundle\Entity\LazyTranslatableTrait;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
@@ -11,36 +12,20 @@ use Doctrine\ORM\Event\LifecycleEventArgs;
 
 class TranslationProxyFactory implements EventSubscriber
 {
-    /**
-     * @var TranslationClassChecker
-     */
-    private $translationClassChecker;
 
     /**
-     * @var TranslationManager
+     * @var Container
      */
-    private $translationManager;
+    private $container;
 
     /**
-     * @param TranslationClassChecker $translationClassChecker
+     * @param Container $container
      *
-     * @return $this;
+     * @return $this
      */
-    public function setTranslationClassChecker($translationClassChecker)
+    public function setContainer($container)
     {
-        $this->translationClassChecker = $translationClassChecker;
-
-        return $this;
-    }
-
-    /**
-     * @param TranslationManager $translationManager
-     *
-     * @return $this;
-     */
-    public function setTranslationManager($translationManager)
-    {
-        $this->translationManager = $translationManager;
+        $this->container = $container;
 
         return $this;
     }
@@ -53,7 +38,8 @@ class TranslationProxyFactory implements EventSubscriber
     public function initialize(TranslatableEntityInterface $entity)
     {
         try {
-            $this->translationClassChecker->checkTranslationClass($entity);
+            $this->container->get('vkr_translation.class_checker')
+                ->checkTranslationClass($entity);
         } catch (TranslationException $e) {
 
             return false;
@@ -66,7 +52,7 @@ class TranslationProxyFactory implements EventSubscriber
             return false;
         }
 
-        $proxy = $this->createProxy($entity, $this->translationManager);
+        $proxy = $this->createProxy($entity, $this->container->get('vkr_translation.translation_manager'));
 
         $propertyReflection = $entityReflection->getProperty('translation');
         $propertyReflection->setAccessible(true);

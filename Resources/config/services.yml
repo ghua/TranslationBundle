@@ -19,7 +19,6 @@ services:
 
     vkr_translation.translation_manager:
         class: VKR\TranslationBundle\Services\TranslationManager
-        lazy: true
         arguments:
             - "@=service(parameter('vkr_translation.locale_retriever_service'))"
             - "@vkr_translation.translated_field_setter"
@@ -27,7 +26,6 @@ services:
 
     vkr_translation.translation_updater:
         class: VKR\TranslationBundle\Services\TranslationUpdater
-        lazy: true
         arguments:
             - "@doctrine.orm.entity_manager"
             - "@vkr_translation.class_checker"
@@ -61,19 +59,17 @@ services:
 
     vkr_translation.translation_proxy_factory:
         class: VKR\TranslationBundle\Services\TranslationProxyFactory
-        lazy: true
         calls:
-            - [ setTranslationClassChecker, ["@vkr_translation.class_checker"]]
-            - [ setTranslationManager, ["@vkr_translation.translation_manager"]]
+            - [ setContainer, ["@service_container"]]
         tags:
             - { name: doctrine.event_subscriber }
 
     vkr_translation.abstract.entity_repository:
         class: VKR\TranslationBundle\Repository\TranslatableEntityRepository
-        abstract: true
         factory: "doctrine.orm.default_entity_manager:getRepository"
 
     vkr_translation.repository_factory:
         class: VKR\TranslationBundle\Repository\TranslatableRepositoryFactory
         calls:
-           - [ setLocaleRetriever, [ "@=service(parameter('vkr_translation.locale_retriever_service'))" ] ]
+            - [ setContainer, ["@service_container"]]
+            - [ setLocaleRetrieverServiceName, [ "@=parameter('vkr_translation.locale_retriever_service')" ] ]

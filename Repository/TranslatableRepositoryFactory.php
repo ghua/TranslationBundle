@@ -5,7 +5,7 @@ namespace VKR\TranslationBundle\Repository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 use Doctrine\ORM\Repository\RepositoryFactory;
-use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
+use Symfony\Component\DependencyInjection\Container;
 
 class TranslatableRepositoryFactory implements RepositoryFactory
 {
@@ -16,9 +16,14 @@ class TranslatableRepositoryFactory implements RepositoryFactory
     private $defaultRepositoryFactory;
 
     /**
-     * @var LocaleRetrieverInterface
+     * @var string
      */
-    private $localeRetriever;
+    private $localeRetrieverServiceName;
+
+    /**
+     * @var Container
+     */
+    private $container;
 
     public function __construct()
     {
@@ -26,13 +31,25 @@ class TranslatableRepositoryFactory implements RepositoryFactory
     }
 
     /**
-     * @param LocaleRetrieverInterface $localeRetriever
+     * @param Container $container
      *
-     * @return $this;
+     * @return $this
      */
-    public function setLocaleRetriever($localeRetriever)
+    public function setContainer($container)
     {
-        $this->localeRetriever = $localeRetriever;
+        $this->container = $container;
+
+        return $this;
+    }
+
+    /**
+     * @param string $localeRetrieverServiceName
+     *
+     * @return $this
+     */
+    public function setLocaleRetrieverServiceName($localeRetrieverServiceName)
+    {
+        $this->localeRetrieverServiceName = $localeRetrieverServiceName;
 
         return $this;
     }
@@ -42,7 +59,7 @@ class TranslatableRepositoryFactory implements RepositoryFactory
         $repository = $this->defaultRepositoryFactory->getRepository($entityManager, $entityName);
 
         if ($repository instanceof TranslatableEntityRepository) {
-            $repository->setLocaleRetriever($this->localeRetriever);
+            $repository->setLocaleRetriever($this->container->get($this->localeRetrieverServiceName));
         }
 
         return $repository;
