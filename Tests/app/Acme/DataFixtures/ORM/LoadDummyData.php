@@ -19,10 +19,14 @@ class LoadDummyData extends AbstractFixture implements OrderedFixtureInterface
     {
         $dummy = new Dummy();
         $dummy->setName('original');
-
         $manager->persist($dummy);
-        $manager->flush();
-
         $this->addReference('dummy', $dummy);
+
+        $dummy = new Dummy();
+        $dummy->setName('without translation');
+        $manager->persist($dummy);
+        $this->addReference('without_translation', $dummy);
+
+        $manager->flush();
     }
 }

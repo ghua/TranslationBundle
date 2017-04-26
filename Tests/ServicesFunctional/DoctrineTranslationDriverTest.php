@@ -63,8 +63,10 @@ class DoctrineTranslationDriverTest extends WebTestCase
             ->findAll();
 
         $this->assertNotEmpty($result);
+        $this->assertCount(2, $result);
 
         $dummy = $result[0];
+        $this->assertEquals('original', $dummy->getName());
         $this->assertEquals(1, $dummy->getTranslations()->count());
 
         /**
@@ -82,6 +84,10 @@ class DoctrineTranslationDriverTest extends WebTestCase
         $doctrineTranslationDriver = $this->get('vkr_translation.drivers.doctrine');
 
         $this->assertEquals($translation, $doctrineTranslationDriver->getTranslation($dummy, 'de'));
+
+        $dummy = $result[1];
+        $this->assertEquals('without translation', $dummy->getName());
+        $this->assertEquals(0, $dummy->getTranslations()->count());
     }
 
 }

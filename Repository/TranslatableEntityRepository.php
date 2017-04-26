@@ -76,10 +76,12 @@ class TranslatableEntityRepository extends EntityRepository
         try {
             $locale = $this->localeRetriever->getCurrentLocale();
 
-            return $qb->leftJoin('e.translations', 't')
-                ->leftJoin('t.language', 'l', Expr\Join::WITH, $qb->expr()->eq('l.code', ':language_code'))
-                ->select('e', 't', 'l')
-                ->setParameter(':language_code', $locale);
+            $qb = $qb->leftJoin('e.translations', 't', Expr\Join::WITH,
+                $qb->expr()->eq('t.language', '(SELECT l1 FROM VKR\TranslationBundle\Entity\LanguageEntityInterface l1 WHERE l1.code = :language_code)'))
+                ->select('e', 't')
+                ->setParameter('language_code', $locale);
+
+            return $qb;
         } catch (\Exception $e) {
 
             return $qb;
