@@ -67,18 +67,20 @@ class TranslatableEntityRepository extends EntityRepository
     }
 
     /**
+     * @param string $alias
+     *
      * @return \Doctrine\ORM\QueryBuilder
      */
-    public function createQueryBuilderWithBasicJoins()
+    public function createQueryBuilderWithBasicJoins($alias = 'e')
     {
-        $qb = $this->createQueryBuilder('e');
+        $qb = $this->createQueryBuilder($alias);
 
         try {
             $locale = $this->localeRetriever->getCurrentLocale();
 
-            $qb = $qb->leftJoin('e.translations', 't', Expr\Join::WITH,
+            $qb = $qb->leftJoin($alias . '.translations', 't', Expr\Join::WITH,
                 $qb->expr()->eq('t.language', '(SELECT l1 FROM VKR\TranslationBundle\Entity\LanguageEntityInterface l1 WHERE l1.code = :language_code)'))
-                ->select('e', 't')
+                ->select($alias, 't')
                 ->setParameter('language_code', $locale);
 
             return $qb;
