@@ -74,6 +74,7 @@ class TranslatableEntityRepository extends EntityRepository
     public function createQueryBuilderWithBasicJoins($alias = 'e')
     {
         $qb = $this->createQueryBuilder($alias);
+        $qb->orderBy(sprintf('%s.id', $alias), 'ASC');
 
         try {
             $locale = $this->localeRetriever->getCurrentLocale();
