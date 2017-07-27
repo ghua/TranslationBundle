@@ -14,7 +14,7 @@ class TranslatableEntityRepository extends EntityRepository
     /**
      * @var LocaleRetrieverInterface
      */
-    private $localeRetriever;
+    protected $localeRetriever;
 
     /**
      * @param LocaleRetrieverInterface $localeRetriever
