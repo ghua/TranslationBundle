@@ -11,6 +11,7 @@ use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Services\TranslationClassChecker;
 use VKR\TranslationBundle\Services\TranslationManager;
 use VKR\TranslationBundle\Services\TranslationProxyFactory;
+use VKR\TranslationBundle\TestHelpers\Entity\ChildDemoLazy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLazy;
@@ -91,6 +92,32 @@ class TranslationProxyFactoryTest extends TestCase
         $this->assertEquals($this->dummyTranslation->getField1(), $dummyEntity->getTranslation()->getField1());
         $this->assertEquals($this->dummyTranslation->getField2(), $dummyEntity->getTranslation()->getField2());
         $this->assertTrue($dummyEntity->getTranslation() instanceof TranslationEntityInterface);
+    }
+
+    public function testLazyTranslationWithInheritance()
+    {
+        $demoLazy = new ChildDemoLazy();
+
+        $this->translationClassChecker
+            ->shouldReceive('checkTranslationClass')
+            ->with(m::mustBe($demoLazy))
+            ->once()
+            ->andReturn(DummyTranslations::class);
+
+        $this->translationManager
+            ->shouldReceive('getTranslation')
+            ->with(m::mustBe($demoLazy))
+            ->once()
+            ->andReturn($this->dummyTranslation);
+
+        $factory = (new TranslationProxyFactory())
+            ->setContainer($this->container);
+
+        $this->assertTrue($factory->initialize($demoLazy));
+
+        $this->assertEquals($this->dummyTranslation->getField1(), $demoLazy->getTranslation()->getField1());
+        $this->assertEquals($this->dummyTranslation->getField2(), $demoLazy->getTranslation()->getField2());
+        $this->assertTrue($demoLazy->getTranslation() instanceof TranslationEntityInterface);
     }
 
     public function testTranslationDoesNotExist()
