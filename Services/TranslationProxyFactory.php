@@ -9,6 +9,7 @@ use VKR\TranslationBundle\Entity\LazyTranslatableTrait;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use Doctrine\ORM\Event\LifecycleEventArgs;
+use VKR\TranslationBundle\Interfaces\LazyTranslatableInterface;
 
 class TranslationProxyFactory implements EventSubscriber
 {
@@ -45,18 +46,31 @@ class TranslationProxyFactory implements EventSubscriber
             return false;
         }
 
-        $entityReflection = new \ReflectionClass($entity);
+        /**
+         * @var TranslationManager $translator
+         */
+        $translator = $this->container->get('vkr_translation.translation_manager');
 
-        if (!in_array(LazyTranslatableTrait::class, $entityReflection->getTraitNames(), true)) {
+        if ($entity instanceof LazyTranslatableInterface) {
 
-            return false;
+            $proxy = $this->createProxy($entity, $translator);
+            $entity->setTranslation($proxy);
+
+        } else {
+
+            $entityReflection = new \ReflectionClass($entity);
+
+            if (!in_array(LazyTranslatableTrait::class, $entityReflection->getTraitNames(), true)) {
+
+                return false;
+            }
+
+            $proxy = $this->createProxy($entity, $translator);
+
+            $propertyReflection = $entityReflection->getProperty('translation');
+            $propertyReflection->setAccessible(true);
+            $propertyReflection->setValue($entity, $proxy);
         }
-
-        $proxy = $this->createProxy($entity, $this->container->get('vkr_translation.translation_manager'));
-
-        $propertyReflection = $entityReflection->getProperty('translation');
-        $propertyReflection->setAccessible(true);
-        $propertyReflection->setValue($entity, $proxy);
 
         return true;
     }
