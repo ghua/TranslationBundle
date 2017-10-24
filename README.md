@@ -251,3 +251,23 @@ translatable fields, or creates a translation if it does not yet exist.
 This method may also throw ```TranslationException``` if no getter and/or setter is found on
 the translation entity or if the translation entity cannot be initialized using ```new```
 keyword.
+
+Developing
+==========
+
+You able to run phpunit tests into a docker container. 
+
+Run this command to build a container:
+```
+docker build -t vkr-translation-phpunit --build-arg USER_ID=`id --user` --build-arg GROUP_ID=`id --group` --build-arg USER_NAME=`id -u -n` --build-arg GROUP_NAME=`id -g -n` .
+```
+
+For a first run:
+```
+docker run --name vkr-translation-phpunit -v `pwd`:/var/www/ vkr-translation-phpunit
+```
+
+For other times:
+```
+docker start -i vkr-translation-phpunit
+```
