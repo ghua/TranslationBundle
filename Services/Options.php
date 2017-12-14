@@ -32,10 +32,14 @@ class Options
 
     /**
      * @param bool $forcedSave
+     *
+     * @return Options
      */
     public function setForcedSave($forcedSave)
     {
         $this->forcedSave = $forcedSave;
+
+        return $this;
     }
 
     /**
@@ -48,9 +52,13 @@ class Options
 
     /**
      * @param array $fieldsToTranslate
+     *
+     * @return Options
      */
     public function setFieldsToTranslate($fieldsToTranslate)
     {
         $this->fieldsToTranslate = $fieldsToTranslate;
+
+        return $this;
     }
 }
