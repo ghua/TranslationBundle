@@ -19,6 +19,11 @@ class TranslationManager
     /** @var TranslationAlgorithmInterface */
     private $algorithm;
 
+    /**
+     * @var TranslationCreator
+     */
+    private $translationCreator;
+
     public function __construct(
         LocaleRetrieverInterface $localeRetriever,
         TranslatedFieldSetter $translatedFieldSetter,
@@ -27,6 +32,22 @@ class TranslationManager
         $this->localeRetriever = $localeRetriever;
         $this->translatedFieldSetter = $translatedFieldSetter;
         $this->algorithm = $defaultAlgorithm;
+    }
+
+    /**
+     * @return TranslationCreator
+     */
+    public function getTranslationCreator()
+    {
+        return $this->translationCreator;
+    }
+
+    /**
+     * @param TranslationCreator $translationCreator
+     */
+    public function setTranslationCreator(TranslationCreator $translationCreator)
+    {
+        $this->translationCreator = $translationCreator;
     }
 
     /**
@@ -41,10 +62,11 @@ class TranslationManager
      * @param TranslatableEntityInterface|TranslatableEntityInterface[] $result
      * @param string $locale
      * @param string $orderBy
+     * @param Options|null $options
      * @return TranslatableEntityInterface|TranslatableEntityInterface[]
      * @throws TranslationException
      */
-    public function translate($result, $locale = '', $orderBy = '')
+    public function translate($result, $locale = '', $orderBy = '', Options $options = null)
     {
         $exception = 'Argument of translate() must be either ' . TranslatableEntityInterface::class . ' object or array of such objects';
         if (!$locale) {
@@ -52,7 +74,7 @@ class TranslationManager
         }
         $fallbackLocale = $this->localeRetriever->getDefaultLocale();
         if ($result instanceof TranslatableEntityInterface) {
-            return $this->translateSingleRecord($result, $locale, $fallbackLocale);
+            return $this->translateSingleRecord($result, $locale, $fallbackLocale, $options);
         }
         if (!is_array($result)) {
             throw new TranslationException($exception);
@@ -62,7 +84,7 @@ class TranslationManager
             if (!$row instanceof TranslatableEntityInterface) {
                 throw new TranslationException($exception);
             }
-            $translatedResult[$key] = $this->translateSingleRecord($row, $locale, $fallbackLocale);
+            $translatedResult[$key] = $this->translateSingleRecord($row, $locale, $fallbackLocale, $options);
         }
         if ($orderBy) {
             $methodName = 'get' . ucfirst($orderBy);
@@ -99,12 +121,19 @@ class TranslationManager
      * @param TranslatableEntityInterface $result
      * @param string $locale
      * @param string|null $fallbackLocale
+     * @param Options|null $options
      * @return TranslatableEntityInterface
+     * @throws \Exception
      */
-    private function translateSingleRecord(TranslatableEntityInterface $result, $locale, $fallbackLocale)
+    private function translateSingleRecord(TranslatableEntityInterface $result, $locale, $fallbackLocale, Options $options = null)
     {
         $translation = $this->getTranslation($result, $locale, $fallbackLocale);
         $result = $this->translatedFieldSetter->setTranslatedFields($result, $translation);
+
+        if ($options && $options->isForcedSave()) {
+            $this->translationCreator->createTranslations($result, $locale, $options->getFieldsToTranslate());
+        }
+
         return $result;
     }
 
