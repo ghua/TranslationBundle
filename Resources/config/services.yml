@@ -23,6 +23,8 @@ services:
             - "@=service(parameter('vkr_translation.locale_retriever_service'))"
             - "@vkr_translation.translated_field_setter"
             - "@vkr_translation.algorithms.default"
+        calls:
+            - [ setTranslationCreator, [ "@vkr_translation.translation_creator" ] ]
 
     vkr_translation.translation_updater:
         class: VKR\TranslationBundle\Services\TranslationUpdater
@@ -73,3 +75,9 @@ services:
         calls:
             - [ setContainer, ["@service_container"]]
             - [ setLocaleRetrieverServiceName, [ "@=parameter('vkr_translation.locale_retriever_service')" ] ]
+
+    vkr_translation.translation_creator:
+        class: VKR\TranslationBundle\Services\TranslationCreator
+        arguments:
+            - "@doctrine.orm.entity_manager"
+            - "@vkr_translation.class_checker"
