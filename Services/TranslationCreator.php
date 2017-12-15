@@ -74,45 +74,25 @@ class TranslationCreator
                 ->setEntity($entity)
                 ->setLanguage($language);
 
-            $isUpdated = false;
+            $entityReflected = new \ReflectionClass($entity);
 
             foreach ($values as $field) {
-                if ($this->setValue($translation, $field)) {
-                    $isUpdated = true;
+                if ($entityReflected->hasProperty($field)) {
+                    $setterName = 'set'.ucfirst($field);
+                    $getterName = 'get'.ucfirst($field);
+                    if (!method_exists($entity, $getterName)) {
+                        throw new TranslationException(sprintf("Method %s not found in class %s", $getterName, get_class($entity)));
+                    }
+                    if (!method_exists($translation, $setterName)) {
+                        throw new TranslationException(sprintf("Method %s not found in class %s", $setterName, get_class($translation)));
+                    }
+                    $translation->$setterName($entity->$getterName());
+
+                    $this->entityManager->persist($translation);
                 }
             }
 
-            if ($isUpdated) {
-                $this->entityManager->persist($translation);
-                $this->entityManager->flush();
-            }
+            $this->entityManager->flush();
         }
-    }
-
-    /**
-     * @param TranslationEntityInterface $translation
-     *
-     * @param string                     $field
-     * @param string|null                $value
-     *
-     * @return bool
-     *
-     * @throws TranslationException
-     */
-    private function setValue(TranslationEntityInterface $translation, $field, $value = null)
-    {
-        $setterName = 'set' . ucfirst($field);
-        if (!method_exists($translation, $setterName)) {
-            throw new TranslationException("Method $setterName not found in class " . get_class($translation));
-        }
-        $getterName = 'get' . ucfirst($field);
-        if (!method_exists($translation, $getterName)) {
-            throw new TranslationException("Method $getterName not found in class " . get_class($translation));
-        }
-        if (!$value || $translation->$getterName() != $value) {
-            $translation->$setterName($value);
-            return true;
-        }
-        return false;
     }
 }
