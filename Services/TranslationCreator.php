@@ -74,18 +74,19 @@ class TranslationCreator
                 ->setEntity($entity)
                 ->setLanguage($language);
 
-            $entityReflected = new \ReflectionClass($entity);
+            $entityReflected = new \ReflectionClass(get_class($entity));
 
             foreach ($values as $field) {
-                if ($entityReflected->hasProperty($field)) {
+                $getterName = 'get'.ucfirst($field);
+                if ($entityReflected->hasMethod($getterName)) {
                     $setterName = 'set'.ucfirst($field);
-                    $getterName = 'get'.ucfirst($field);
                     if (!method_exists($entity, $getterName)) {
                         throw new TranslationException(sprintf("Method %s not found in class %s", $getterName, get_class($entity)));
                     }
                     if (!method_exists($translation, $setterName)) {
                         throw new TranslationException(sprintf("Method %s not found in class %s", $setterName, get_class($translation)));
                     }
+
                     $translation->$setterName($entity->$getterName());
 
                     $this->entityManager->persist($translation);
