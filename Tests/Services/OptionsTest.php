@@ -61,6 +61,38 @@ class OptionsTest extends TestCase
     }
 
     /**
+     * @return void
+     */
+    public function testSetForcedSaveByGoogleReturnSelf()
+    {
+        $this->assertEquals($this->options, $this->options->setForcedSaveByGoogle(false));
+        $this->assertEquals($this->options, $this->options->setForcedSaveByGoogle(true));
+    }
+
+    /**
+     * @return void
+     */
+    public function testIsForcedSaveByGoogleReturnFalse()
+    {
+        $this->assertEquals(false, $this->options->isForcedSaveByGoogle());
+        $this->assertFalse($this->options->isForcedSaveByGoogle());
+    }
+
+    /**
+     * @return void
+     */
+    public function testIsForcedSaveByGoogleReturnTrue()
+    {
+        $reflectionClass = new \ReflectionClass(get_class($this->options));
+        $property = $reflectionClass->getProperty('forcedSaveByGoogle');
+        $property->setAccessible(true);
+        $property->setValue($this->options, true);
+
+        $this->assertEquals(true, $this->options->isForcedSaveByGoogle());
+        $this->assertTrue($this->options->isForcedSaveByGoogle());
+    }
+
+    /**
      * @return array
      */
     public function fieldsToTranslateProvider()

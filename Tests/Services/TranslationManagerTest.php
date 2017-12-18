@@ -280,6 +280,26 @@ class TranslationManagerTest extends TestCase
         $this->assertEquals('boo', $translatedResult[1]->getField2());
     }
 
+    public function testWithEmptyOrderingAndOptionsWithForcedSaveByGoogle()
+    {
+        $currentLocale = 'ru';
+
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $this->translationRu[0]->setField2('foo');
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $this->translationRu[1]->setField2('boo');
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        /** @var Dummy[] $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale, '', (new Options())->setForcedSaveByGoogle(true)->setFieldsToTranslate(['foo']));
+        $this->assertEquals('foo', $translatedResult[0]->getField2());
+        $this->assertEquals('boo', $translatedResult[1]->getField2());
+    }
+
     private function mockLocaleRetriever()
     {
         $localeRetriever = $this->createMock(LocaleRetrieverInterface::class);
