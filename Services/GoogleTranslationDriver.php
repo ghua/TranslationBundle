@@ -3,6 +3,7 @@ namespace VKR\TranslationBundle\Services;
 
 use Google\Cloud\Translate\TranslateClient;
 use VKR\TranslationBundle\Decorators\GoogleClientDecorator;
+use VKR\TranslationBundle\Entity\GoogleTranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Exception\GoogleTranslationException;
@@ -79,6 +80,11 @@ class GoogleTranslationDriver
             }
             $newTranslation->$setterName($value);
         }
+
+        if ($newTranslation instanceof GoogleTranslatableEntityInterface) {
+            $newTranslation->setTranslatedByGoogle(true);
+        }
+
         return $newTranslation;
     }
 

@@ -1,6 +1,7 @@
 <?php
 namespace VKR\TranslationBundle\Services;
 
+use VKR\TranslationBundle\Entity\GoogleTranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslatableEntityInterface;
 use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
@@ -131,6 +132,12 @@ class TranslationManager
         $result = $this->translatedFieldSetter->setTranslatedFields($result, $translation);
 
         if ($options && $options->isForcedSave()) {
+            $this->translationCreator->createTranslations($result, $locale, $options->getFieldsToTranslate());
+        }
+
+        if ($options && $options->isForcedSaveByGoogle()
+        && $translation instanceof GoogleTranslatableEntityInterface
+        && $translation->isTranslatedByGoogle()) {
             $this->translationCreator->createTranslations($result, $locale, $options->getFieldsToTranslate());
         }
 

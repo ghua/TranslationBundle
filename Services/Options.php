@@ -18,6 +18,11 @@ class Options
     protected $forcedSave = false;
 
     /**
+     * @var bool
+     */
+    protected $forcedSaveByGoogle = false;
+
+    /**
      * @var array
      */
     protected $fieldsToTranslate = [];
@@ -38,6 +43,26 @@ class Options
     public function setForcedSave($forcedSave)
     {
         $this->forcedSave = $forcedSave;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isForcedSaveByGoogle()
+    {
+        return $this->forcedSaveByGoogle;
+    }
+
+    /**
+     * @param bool $forcedSaveByGoogle
+     *
+     * @return Options
+     */
+    public function setForcedSaveByGoogle($forcedSaveByGoogle)
+    {
+        $this->forcedSaveByGoogle = $forcedSaveByGoogle;
 
         return $this;
     }
