@@ -8,13 +8,16 @@ use VKR\TranslationBundle\Entity\TranslationEntityInterface;
 use VKR\TranslationBundle\Exception\TranslationException;
 use VKR\TranslationBundle\Interfaces\LocaleRetrieverInterface;
 use VKR\TranslationBundle\Services\Algorithms\DefaultAlgorithm;
+use VKR\TranslationBundle\Services\Options;
 use VKR\TranslationBundle\Services\TranslatedFieldSetter;
+use VKR\TranslationBundle\Services\TranslationCreator;
 use VKR\TranslationBundle\Services\TranslationManager;
 use VKR\TranslationBundle\TestHelpers\Algorithms\DummyAlgorithm;
 use VKR\TranslationBundle\TestHelpers\Entity\Dummy;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyLanguageEntity;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyTranslations;
 use VKR\TranslationBundle\TestHelpers\Entity\DummyWithFallback;
+use Mockery as m;
 
 class TranslationManagerTest extends TestCase
 {
@@ -52,6 +55,11 @@ class TranslationManagerTest extends TestCase
      */
     private $translationRu;
 
+    /**
+     * @var TranslationCreator|m\MockInterface
+     */
+    private $transaltionCreator;
+
     public function setUp()
     {
         $this->defaultLocale = 'en';
@@ -61,6 +69,8 @@ class TranslationManagerTest extends TestCase
         $this->languageRu->setCode('ru');
         $this->languageDe = new DummyLanguageEntity();
         $this->languageDe->setCode('de');
+
+        $this->setTranslationCreator();
 
         $this->translationEn[0] = new DummyTranslations();
         $this->translationEn[0]
@@ -96,6 +106,10 @@ class TranslationManagerTest extends TestCase
         $this->translationManager = new TranslationManager(
             $localeRetriever, $translatedFieldSetter, $defaultAlgorithm
         );
+        $reflectionClass = new \ReflectionClass(get_class($this->translationManager));
+        $property = $reflectionClass->getProperty('translationCreator');
+        $property->setAccessible(true);
+        $property->setValue($this->translationManager, $this->transaltionCreator);
     }
 
     public function testWithSingleResult()
@@ -226,6 +240,46 @@ class TranslationManagerTest extends TestCase
         $this->assertEquals('foo', $translatedResult->getField1());
     }
 
+    public function testWithOrderingAndOptions()
+    {
+        $currentLocale = 'ru';
+
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $this->translationRu[0]->setField2('foo');
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $this->translationRu[1]->setField2('boo');
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        /** @var Dummy[] $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale, 'field2', new Options());
+        $this->assertEquals('boo', $translatedResult[0]->getField2());
+        $this->assertEquals('foo', $translatedResult[1]->getField2());
+    }
+
+    public function testWithEmptyOrderingAndOptions()
+    {
+        $currentLocale = 'ru';
+
+        $result = [];
+        $result[0] = new Dummy();
+        $result[0]->addTranslation($this->translationEn[0]);
+        $this->translationRu[0]->setField2('foo');
+        $result[0]->addTranslation($this->translationRu[0]);
+        $result[1] = new Dummy();
+        $result[1]->addTranslation($this->translationEn[1]);
+        $this->translationRu[1]->setField2('boo');
+        $result[1]->addTranslation($this->translationRu[1]);
+
+        /** @var Dummy[] $translatedResult */
+        $translatedResult = $this->translationManager->translate($result, $currentLocale, '', (new Options())->setForcedSave(true)->setFieldsToTranslate(['foo']));
+        $this->assertEquals('foo', $translatedResult[0]->getField2());
+        $this->assertEquals('boo', $translatedResult[1]->getField2());
+    }
+
     private function mockLocaleRetriever()
     {
         $localeRetriever = $this->createMock(LocaleRetrieverInterface::class);
@@ -286,5 +340,17 @@ class TranslationManagerTest extends TestCase
             $record->setName($record->getSlug());
         }
         return $record;
+    }
+
+    /**
+     * @return void
+     */
+    public function setTranslationCreator()
+    {
+        $this->transaltionCreator = m::mock(TranslationCreator::class);
+        $this->transaltionCreator
+            ->shouldReceive('createTranslations')
+            ->atLeast()
+            ->andReturn();
     }
 }

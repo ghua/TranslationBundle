@@ -61,7 +61,7 @@ class TranslationCreator
             ->findOneBy(['code' => $locale]);
 
         if (!$language) {
-            throw new TranslationException("Locale $locale not found in the DB");
+            throw new TranslationException(sprintf("Locale %s not found in database", $locale));
         }
 
         /** @var TranslationEntityInterface|null $translation */
