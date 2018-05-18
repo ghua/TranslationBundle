@@ -14,7 +14,7 @@ class TranslationClassChecker
      */
     public function checkTranslationClass(TranslatableEntityInterface $entity)
     {
-        $translationClass = get_class($entity) . 'Translations';
+        $translationClass = get_class($entity) . 'Translation';
         if (!class_exists($translationClass)) {
             throw new TranslationException("Class $translationClass does not exist");
         }
